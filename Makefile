@@ -32,10 +32,11 @@ lint:
 
 verify:
 	docker run $(TTY) $(VOLUMES) $(INSTALL) sh -c "cp -r /opt/service /opt/install && cd /opt/install/ && \
-	apk update && apk add gcc libc-dev make libpq postgresql-dev build-base && python setup.py install && \
-	python -m relations.restful.resource && \
-	python -m relations.restful.source && \
-	python -m relations.restful.unittest"
+	apk update && apk add git && pip install git+https://github.com/gaf3/python-relations.git@gaf3/REL-30-split#egg=relations && \
+	python setup.py install && \
+	python -m relations_restful.resource && \
+	python -m relations_restful.source && \
+	python -m relations_restful.unittest"
 
 tag:
 	-git tag -a $(VERSION) -m "Version $(VERSION)"

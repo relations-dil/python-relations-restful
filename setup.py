@@ -6,12 +6,13 @@ setup(
     version="0.1.0",
     package_dir = {'': 'lib'},
     py_modules = [
-        'relations.restful',
-        'relations.restful.resource',
-        'relations.restful.source',
-        'relations.restful.unittest'
+        'relations_restful',
+        'relations_restful.resource',
+        'relations_restful.source',
+        'relations_restful.unittest'
     ],
     install_requires=[
+        'requests==2.25.1',
         'flask==1.1.2',
         'flask_restful==0.3.8'
     ]
