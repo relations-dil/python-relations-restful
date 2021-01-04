@@ -1,3 +1,9 @@
+"""
+Resource module for Relations and Flask RESTful
+"""
+
+# pylint: disable=not-callable
+
 import flask
 import flask_restful
 
@@ -88,16 +94,15 @@ class Resource(flask_restful.Resource):
         Creates one or more models
         """
 
-        if self.SINGULAR not in (flask.request.json or {}) and self.PLURAL not in (flask.request.json or {}):
-            raise werkzeug.exceptions.BadRequest(f"either {self.SINGULAR} or {self.PLURAL} required")
-
-        if self.SINGULAR in flask.request.json:
+        if self.SINGULAR in (flask.request.json or {}):
 
             return {self.SINGULAR: dict(self.MODEL(**flask.request.json[self.SINGULAR]).create())}, 201
 
-        if self.PLURAL in flask.request.json:
+        if self.PLURAL in (flask.request.json or {}):
 
             return {self.PLURAL: [dict(model) for model in self.MODEL(flask.request.json[self.PLURAL]).create()]}, 201
+
+        raise werkzeug.exceptions.BadRequest(f"either {self.SINGULAR} or {self.PLURAL} required")
 
     @exceptions
     def get(self, id=None):

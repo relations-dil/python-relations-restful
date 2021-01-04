@@ -1,3 +1,9 @@
+"""
+Source module for RESTful backends
+"""
+
+# pylint: disable=arguments-differ
+
 import requests
 import relations
 
@@ -9,7 +15,7 @@ class Source(relations.Source):
     url = None
     session = None
 
-    def __init__(self, name, url, session=None, **kwargs):
+    def __init__(self, name, url, session=None, **kwargs): # pylint: disable=unused-argument
 
         self.url = url
 
@@ -17,11 +23,12 @@ class Source(relations.Source):
             self.session = session
         else:
             self.session = requests.Session()
-            for name, arg in kwargs.items():
-                if name not in ["name", "url"]:
-                    setattr(self.session, name, arg)
+            for key, arg in kwargs.items():
+                if key not in ["name", "url"]:
+                    setattr(self.session, key, arg)
 
-    def result(self, key, response):
+    @staticmethod
+    def result(key, response):
         """
         Checks a response and returns the result
         """
@@ -70,7 +77,7 @@ class Source(relations.Source):
             if model._id is not None and model._fields._names[model._id].readonly:
                 creating[model._id] = records[index][model._fields._names[model._id].store]
 
-            for parent_child, relation in creating.CHILDREN.items():
+            for parent_child in creating.CHILDREN:
                 if creating._children.get(parent_child):
                     creating._children[parent_child].create()
 
@@ -110,8 +117,7 @@ class Source(relations.Source):
 
                 if verify:
                     raise relations.model.ModelError(model, "none retrieved")
-                else:
-                    return None
+                return None
 
             model._record = model._build("update", _read=matches[0])
 
@@ -133,7 +139,7 @@ class Source(relations.Source):
         Updates values with the field's that changed
         """
 
-        if not field.readonly and (changed is None or field.changed==changed):
+        if not field.readonly and (changed is None or field.changed == changed):
             values[field.name] = field.value
             field.changed = False
 
@@ -154,7 +160,9 @@ class Source(relations.Source):
             values = {}
             self.record_update(model._record, values, changed=True)
 
-            updated += self.result("updated", self.session.patch(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria, model.PLURAL: values}))
+            updated += self.result("updated", self.session.patch(
+                f"{self.url}/{model.ENDPOINT}", json={"filter": criteria, model.PLURAL: values})
+            )
 
         elif model._id:
 
@@ -163,9 +171,11 @@ class Source(relations.Source):
                 values = {}
                 self.record_update(updating._record, values)
 
-                updated += self.result("updated", self.session.patch(f"{self.url}/{model.ENDPOINT}/{updating[model._id]}", json={model.SINGULAR: values}))
+                updated += self.result("updated", self.session.patch(
+                    f"{self.url}/{model.ENDPOINT}/{updating[model._id]}", json={model.SINGULAR: values})
+                )
 
-                for parent_child, relation in updating.CHILDREN.items():
+                for parent_child in updating.CHILDREN:
                     if updating._children.get(parent_child):
                         updating._children[parent_child].create().update()
 
