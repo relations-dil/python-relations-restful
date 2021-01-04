@@ -1,4 +1,4 @@
-git+https://github.com/gaf3/python-relations.git@gaf3/REL-30-split#egg=relations
+git+https://github.com/gaf3/python-relations.git@0.2.0#egg=relations
 requests==2.25.1
 flask==1.1.2
 flask_restful==0.3.8
