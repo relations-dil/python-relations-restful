@@ -109,14 +109,14 @@ class Source(relations.Source):
         matches = self.result(model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))
 
         if model._mode == "one" and len(matches) > 1:
-            raise relations.model.ModelError(model, "more than one retrieved")
+            raise relations.ModelError(model, "more than one retrieved")
 
         if model._mode == "one" and model._role != "child":
 
             if len(matches) < 1:
 
                 if verify:
-                    raise relations.model.ModelError(model, "none retrieved")
+                    raise relations.ModelError(model, "none retrieved")
                 return None
 
             model._record = model._build("update", _read=matches[0])
@@ -181,7 +181,7 @@ class Source(relations.Source):
 
         else:
 
-            raise relations.model.ModelError(model, "nothing to update from")
+            raise relations.ModelError(model, "nothing to update from")
 
         return updated
 
@@ -209,6 +209,6 @@ class Source(relations.Source):
 
         else:
 
-            raise relations.model.ModelError(model, "nothing to delete from")
+            raise relations.ModelError(model, "nothing to delete from")
 
         return self.result("deleted", self.session.delete(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))

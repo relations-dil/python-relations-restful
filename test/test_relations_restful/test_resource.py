@@ -7,10 +7,10 @@ import flask
 import flask_restful
 import werkzeug.exceptions
 
-import relations.model
+import relations
 import relations_restful
 
-class ResourceModel(relations.model.Model):
+class ResourceModel(relations.Model):
     SOURCE = "TestRestfulResource"
 
 class Simple(ResourceModel):
@@ -22,7 +22,7 @@ class Plain(ResourceModel):
     simple_id = int
     name = str
 
-relations.model.OneToMany(Simple, Plain)
+relations.OneToMany(Simple, Plain)
 
 class SimpleResource(relations_restful.Resource):
     MODEL = Simple
