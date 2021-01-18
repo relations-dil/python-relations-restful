@@ -291,5 +291,5 @@ class TestSource(unittest.TestCase):
         self.assertEqual(len(Unit.many()), 0)
         self.assertEqual(len(Test.many()), 0)
 
-        plain = Plain().create()
+        plain = Plain(0, "nope").create()
         self.assertRaisesRegex(relations.ModelError, "plain: nothing to delete from", plain.delete)
