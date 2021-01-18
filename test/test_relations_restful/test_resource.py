@@ -88,16 +88,61 @@ class TestResource(relations_restful.unittest.TestCase):
         resource = InitResource()
         self.assertEqual(resource.SINGULAR, "init")
         self.assertEqual(resource.PLURAL, "inits")
+        self.assertEqual(resource.FIELDS, [])
+        self.assertEqual(resource.fields, [
+            {
+                "name": "id",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "required": True
+            }
+        ])
 
         Init.SINGULAR = "inity"
+        InitResource.FIELDS = [
+            {
+                "name": "name",
+                "options": ["few"]
+            }
+        ]
         resource = InitResource()
         self.assertEqual(resource.SINGULAR, "inity")
         self.assertEqual(resource.PLURAL, "initys")
+        self.assertEqual(resource.fields, [
+            {
+                "name": "id",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "required": True,
+                "options": ["few"]
+            }
+        ])
 
         Init.PLURAL = "inities"
+        InitResource.FIELDS = [
+            {
+                "name": "name",
+                "validation": "gone"
+            }
+        ]
         resource = InitResource()
         self.assertEqual(resource.SINGULAR, "inity")
         self.assertEqual(resource.PLURAL, "inities")
+        self.assertEqual(resource.fields, [
+            {
+                "name": "id",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "required": True,
+                "validation": "gone"
+            }
+        ])
 
         InitResource.SINGULAR = "initee"
         resource = InitResource()
@@ -131,6 +176,37 @@ class TestResource(relations_restful.unittest.TestCase):
 
         response = self.api.get("/criteria?a=1", json={"filter": {"a": 2}})
         self.assertStatusValue(response, 200, "criteria", {"a": 2})
+
+    def test_options(self):
+
+        response = self.api.options("/simple")
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "id",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "required": True
+            }
+        ], errors=[])
+
+        id = self.api.post("/simple", json={"simple": {"name": "ya"}}).json["simple"]["id"]
+
+        response = self.api.options(f"/simple/{id}")
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "id",
+                "readonly": True,
+                "original": id
+            },
+            {
+                "name": "name",
+                "required": True,
+                "original": "ya"
+            }
+        ], errors=[])
+
 
     def test_post(self):
 

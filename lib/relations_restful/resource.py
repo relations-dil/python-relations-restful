@@ -11,6 +11,8 @@ import functools
 import traceback
 import werkzeug.exceptions
 
+import opengui
+
 def exceptions(endpoint):
     """
     Decorator that adds and handles a database session
@@ -48,8 +50,10 @@ class Resource(flask_restful.Resource):
     MODEL = None
     SINGULAR = None
     PLURAL = None
+    FIELDS = None
 
     model = None
+    fields = None
 
     def __init__(self, *args, **kwargs):
 
@@ -69,6 +73,30 @@ class Resource(flask_restful.Resource):
             else:
                 self.PLURAL = f"{self.SINGULAR}s"
 
+        if self.FIELDS is None:
+            self.FIELDS = []
+
+        self.fields = []
+        fields = opengui.Fields(fields=self.FIELDS)
+
+        for model_field in self.model._fields._order:
+
+            form_field = {
+                "name": model_field.name
+            }
+
+            for attribute in ["readonly", "options", "validation"]:
+                if getattr(model_field, attribute):
+                    form_field[attribute] = getattr(model_field, attribute)
+
+            if not model_field.none:
+                form_field["required"] = True
+
+            if model_field.name in fields.names:
+                form_field.update(fields[model_field.name].to_dict())
+
+            self.fields.append(form_field)
+
     @staticmethod
     def criteria(verify=False):
         """
@@ -87,6 +115,20 @@ class Resource(flask_restful.Resource):
             criteria.update(flask.request.json["filter"])
 
         return criteria
+
+    @exceptions
+    def options(self, id=None):
+        """
+        Generates form for inserts or updates of a single record
+        """
+
+        values = (flask.request.json or {}).get(self.SINGULAR)
+
+        if id is None:
+
+            return opengui.Fields(values, fields=self.fields).to_dict(), 200
+
+        return opengui.Fields(values, dict(self.MODEL.one(**{self.model._id: id})), self.fields).to_dict(), 200
 
     @exceptions
     def post(self):

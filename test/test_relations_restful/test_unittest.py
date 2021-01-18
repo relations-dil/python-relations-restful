@@ -46,6 +46,14 @@ class TestUnitTest(relations_restful.unittest.TestCase):
             self.assertContains({"a": 2}, [{"a": 1, "b": 2}], "nope")
             mock_in.assert_called_once_with({"a": 2}, [{"a": 1, "b": 2}], "nope")
 
+    def test_assertFields(self):
+
+        fields = unittest.mock.MagicMock()
+
+        fields.to_list.return_value = [1, 2, 3]
+
+        self.assertFields(fields, [1, 2, 3])
+
     def test_assertassertStatusValue(self):
 
         response = unittest.mock.MagicMock()
@@ -54,6 +62,18 @@ class TestUnitTest(relations_restful.unittest.TestCase):
         response.json = {"a": 1}
 
         self.assertStatusValue(response, 200, "a", 1)
+
+    def test_assertStatusFields(self):
+
+        response = unittest.mock.MagicMock()
+
+        response.status_code = 200
+        response.json = {
+            "fields": [1, 2, 3],
+            "errors": True
+        }
+
+        self.assertStatusFields(response, 200, [1, 2, 3], errors=True)
 
     def test_assertStatusModel(self):
 
