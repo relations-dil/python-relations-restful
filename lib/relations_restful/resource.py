@@ -128,9 +128,7 @@ class Resource(flask_restful.Resource):
 
             return opengui.Fields(values, fields=self.fields).to_dict(), 200
 
-        else:
-
-            return opengui.Fields(values, dict(self.MODEL.one(**{self.model._id: id})), self.fields).to_dict(), 200
+        return opengui.Fields(values, dict(self.MODEL.one(**{self.model._id: id})), self.fields).to_dict(), 200
 
     @exceptions
     def post(self):
