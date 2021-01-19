@@ -198,15 +198,31 @@ class TestResource(relations_restful.unittest.TestCase):
             {
                 "name": "id",
                 "readonly": True,
+                "original": id,
+                "value": id
+            },
+            {
+                "name": "name",
+                "required": True,
+                "original": "ya",
+                "value": "ya"
+            }
+        ], errors=[])
+
+        response = self.api.options(f"/simple/{id}", json={"simple": {"name": "sure"}})
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "id",
+                "readonly": True,
                 "original": id
             },
             {
                 "name": "name",
                 "required": True,
-                "original": "ya"
+                "original": "ya",
+                "value": "sure"
             }
         ], errors=[])
-
 
     def test_post(self):
 

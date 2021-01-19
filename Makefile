@@ -1,7 +1,7 @@
 ACCOUNT=gaf3
 IMAGE=relations-restful
 INSTALL=python:3.8.5-alpine3.12
-VERSION?=0.2.2
+VERSION?=0.2.3
 NETWORK=relations.io
 DEBUG_PORT=5678
 TTY=$(shell if tty -s; then echo "-it"; fi)

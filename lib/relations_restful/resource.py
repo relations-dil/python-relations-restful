@@ -126,9 +126,11 @@ class Resource(flask_restful.Resource):
 
         if id is None:
 
-            return opengui.Fields(values, fields=self.fields).to_dict(), 200
+            return opengui.Fields(values=values, fields=self.fields).to_dict(), 200
 
-        return opengui.Fields(values, dict(self.MODEL.one(**{self.model._id: id})), self.fields).to_dict(), 200
+        originals = dict(self.MODEL.one(**{self.model._id: id}))
+
+        return opengui.Fields(values=values or originals, originals=originals, fields=self.fields).to_dict(), 200
 
     @exceptions
     def post(self):
