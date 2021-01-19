@@ -30,7 +30,7 @@ test:
 lint:
 	docker run $(TTY) $(VOLUMES) $(ENVIRONMENT) $(ACCOUNT)/$(IMAGE):$(VERSION) sh -c "pylint --rcfile=.pylintrc lib/"
 
-verify:
+setup:
 	docker run $(TTY) $(VOLUMES) $(INSTALL) sh -c "cp -r /opt/service /opt/install && cd /opt/install/ && \
 	apk update && apk add git && pip install \
 	git+https://github.com/gaf3/python-relations.git@0.2.8#egg=relations \
