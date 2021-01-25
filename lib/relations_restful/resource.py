@@ -55,7 +55,7 @@ class Resource(flask_restful.Resource):
     model = None
     fields = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs): # pylint: disable=too-many-branches
 
         super(Resource).__init__(*args, **kwargs)
 
