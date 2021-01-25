@@ -22,6 +22,12 @@ class Plain(ResourceModel):
     simple_id = int
     name = str
 
+class Meta(ResourceModel):
+    id = int
+    name = str
+    stuff = list
+    things = dict
+
 relations.OneToMany(Simple, Plain)
 
 class SimpleResource(relations_restful.Resource):
@@ -29,6 +35,9 @@ class SimpleResource(relations_restful.Resource):
 
 class PlainResource(relations_restful.Resource):
     MODEL = Plain
+
+class MetaResource(relations_restful.Resource):
+    MODEL = Meta
 
 class TestResource(relations_restful.unittest.TestCase):
 
@@ -41,6 +50,7 @@ class TestResource(relations_restful.unittest.TestCase):
 
         restful.add_resource(SimpleResource, '/simple', '/simple/<id>')
         restful.add_resource(PlainResource, '/plain')
+        restful.add_resource(MetaResource, '/meta', '/meta/<id>')
 
         self.api = self.app.test_client()
 
@@ -221,6 +231,28 @@ class TestResource(relations_restful.unittest.TestCase):
                 "required": True,
                 "original": "ya",
                 "value": "sure"
+            }
+        ], errors=[])
+
+        response = self.api.options("/meta")
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "id",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "required": True
+            },
+            {
+                "name": "stuff",
+                "format": "list",
+                "required": True
+            },
+            {
+                "name": "things",
+                "format": "dict",
+                "required": True
             }
         ], errors=[])
 
