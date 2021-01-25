@@ -55,7 +55,7 @@ class Resource(flask_restful.Resource):
     model = None
     fields = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs): # pylint: disable=too-many-branches
 
         super(Resource).__init__(*args, **kwargs)
 
@@ -90,7 +90,9 @@ class Resource(flask_restful.Resource):
                 if getattr(model_field, attribute):
                     form_field[attribute] = getattr(model_field, attribute)
 
-            if not model_field.none:
+            if model_field.default is not None:
+                form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
+            elif not model_field.none:
                 form_field["required"] = True
 
             if model_field.name in fields.names:
