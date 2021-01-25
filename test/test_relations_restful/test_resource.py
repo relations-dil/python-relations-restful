@@ -81,6 +81,8 @@ class TestResource(relations_restful.unittest.TestCase):
         class Init(ResourceModel):
             id = int
             name = str
+            status = str,"good"
+            meta = dict
 
         class InitResource(relations_restful.Resource):
             MODEL = Init
@@ -99,6 +101,16 @@ class TestResource(relations_restful.unittest.TestCase):
                 "name": "name",
                 "kind": "str",
                 "required": True
+            },
+            {
+                "name": "status",
+                "kind": "str",
+                "default": "good"
+            },
+            {
+                "name": "meta",
+                "kind": "dict",
+                "default": {}
             }
         ])
 
@@ -107,7 +119,8 @@ class TestResource(relations_restful.unittest.TestCase):
             {
                 "name": "name",
                 "kind": "str",
-                "options": ["few"]
+                "options": ["few"],
+                "required": True
             }
         ]
         resource = InitResource()
@@ -122,8 +135,18 @@ class TestResource(relations_restful.unittest.TestCase):
             {
                 "name": "name",
                 "kind": "str",
-                "required": True,
-                "options": ["few"]
+                "options": ["few"],
+                "required": True
+            },
+            {
+                "name": "status",
+                "kind": "str",
+                "default": "good"
+            },
+            {
+                "name": "meta",
+                "kind": "dict",
+                "default": {}
             }
         ])
 
@@ -148,7 +171,17 @@ class TestResource(relations_restful.unittest.TestCase):
                 "name": "name",
                 "kind": "str",
                 "required": True,
-                "validation": "gone"
+                "validation": "gone",
+            },
+            {
+                "name": "status",
+                "kind": "str",
+                "default": "good"
+            },
+            {
+                "name": "meta",
+                "kind": "dict",
+                "default": {}
             }
         ])
 
