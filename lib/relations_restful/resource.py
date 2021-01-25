@@ -55,7 +55,7 @@ class Resource(flask_restful.Resource):
     model = None
     fields = None
 
-    def __init__(self, *args, **kwargs): # pylint: disable=too-many-branches
+    def __init__(self, *args, **kwargs):
 
         super(Resource).__init__(*args, **kwargs)
 
@@ -82,7 +82,8 @@ class Resource(flask_restful.Resource):
         for model_field in self.model._fields._order:
 
             form_field = {
-                "name": model_field.name
+                "name": model_field.name,
+                "kind": model_field.kind.__name__
             }
 
             for attribute in ["readonly", "options", "validation"]:
@@ -91,12 +92,6 @@ class Resource(flask_restful.Resource):
 
             if not model_field.none:
                 form_field["required"] = True
-
-            if model_field.kind == list:
-                form_field["format"] = "list"
-
-            if model_field.kind == dict:
-                form_field["format"] = "dict"
 
             if model_field.name in fields.names:
                 form_field.update(fields[model_field.name].to_dict())

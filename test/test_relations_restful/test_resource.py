@@ -22,12 +22,6 @@ class Plain(ResourceModel):
     simple_id = int
     name = str
 
-class Meta(ResourceModel):
-    id = int
-    name = str
-    stuff = list
-    things = dict
-
 relations.OneToMany(Simple, Plain)
 
 class SimpleResource(relations_restful.Resource):
@@ -35,9 +29,6 @@ class SimpleResource(relations_restful.Resource):
 
 class PlainResource(relations_restful.Resource):
     MODEL = Plain
-
-class MetaResource(relations_restful.Resource):
-    MODEL = Meta
 
 class TestResource(relations_restful.unittest.TestCase):
 
@@ -50,7 +41,6 @@ class TestResource(relations_restful.unittest.TestCase):
 
         restful.add_resource(SimpleResource, '/simple', '/simple/<id>')
         restful.add_resource(PlainResource, '/plain')
-        restful.add_resource(MetaResource, '/meta', '/meta/<id>')
 
         self.api = self.app.test_client()
 
@@ -102,10 +92,12 @@ class TestResource(relations_restful.unittest.TestCase):
         self.assertEqual(resource.fields, [
             {
                 "name": "id",
-                "readonly": True
+                "kind": "int",
+                "readonly": True,
             },
             {
                 "name": "name",
+                "kind": "str",
                 "required": True
             }
         ])
@@ -114,6 +106,7 @@ class TestResource(relations_restful.unittest.TestCase):
         InitResource.FIELDS = [
             {
                 "name": "name",
+                "kind": "str",
                 "options": ["few"]
             }
         ]
@@ -123,10 +116,12 @@ class TestResource(relations_restful.unittest.TestCase):
         self.assertEqual(resource.fields, [
             {
                 "name": "id",
+                "kind": "int",
                 "readonly": True
             },
             {
                 "name": "name",
+                "kind": "str",
                 "required": True,
                 "options": ["few"]
             }
@@ -136,6 +131,7 @@ class TestResource(relations_restful.unittest.TestCase):
         InitResource.FIELDS = [
             {
                 "name": "name",
+                "kind": "str",
                 "validation": "gone"
             }
         ]
@@ -145,10 +141,12 @@ class TestResource(relations_restful.unittest.TestCase):
         self.assertEqual(resource.fields, [
             {
                 "name": "id",
+                "kind": "int",
                 "readonly": True
             },
             {
                 "name": "name",
+                "kind": "str",
                 "required": True,
                 "validation": "gone"
             }
@@ -193,10 +191,12 @@ class TestResource(relations_restful.unittest.TestCase):
         self.assertStatusFields(response, 200, [
             {
                 "name": "id",
+                "kind": "int",
                 "readonly": True
             },
             {
                 "name": "name",
+                "kind": "str",
                 "required": True
             }
         ], errors=[])
@@ -207,12 +207,14 @@ class TestResource(relations_restful.unittest.TestCase):
         self.assertStatusFields(response, 200, [
             {
                 "name": "id",
+                "kind": "int",
                 "readonly": True,
                 "original": id,
                 "value": id
             },
             {
                 "name": "name",
+                "kind": "str",
                 "required": True,
                 "original": "ya",
                 "value": "ya"
@@ -223,36 +225,16 @@ class TestResource(relations_restful.unittest.TestCase):
         self.assertStatusFields(response, 200, [
             {
                 "name": "id",
+                "kind": "int",
                 "readonly": True,
                 "original": id
             },
             {
                 "name": "name",
+                "kind": "str",
                 "required": True,
                 "original": "ya",
                 "value": "sure"
-            }
-        ], errors=[])
-
-        response = self.api.options("/meta")
-        self.assertStatusFields(response, 200, [
-            {
-                "name": "id",
-                "readonly": True
-            },
-            {
-                "name": "name",
-                "required": True
-            },
-            {
-                "name": "stuff",
-                "format": "list",
-                "required": True
-            },
-            {
-                "name": "things",
-                "format": "dict",
-                "required": True
             }
         ], errors=[])
 
