@@ -108,7 +108,7 @@ class TestSource(unittest.TestCase):
 
         self.source = relations_restful.Source("TestRestfulSource", "", self.app.test_client())
 
-        def result(key, response):
+        def result(model, key, response):
             return response.json[key]
 
         self.source.result = result
@@ -134,11 +134,24 @@ class TestSource(unittest.TestCase):
 
         source = relations_restful.Source("test", "http://unit.com", session="sesh")
 
+        model = unittest.mock.MagicMock()
+        model.NAME = "moded"
+
+        # good
+
         response = unittest.mock.MagicMock()
+        response.status_code = 200
         response.json.return_value = {"name": "value"}
 
-        self.assertEqual(source.result("name", response), "value")
-        response.raise_for_status.assert_called_once_with()
+        self.assertEqual(source.result(model, "name", response), "value")
+
+        # bad
+
+        response = unittest.mock.MagicMock()
+        response.status_code = 500
+        response.json.return_value = {"message": "whoops"}
+
+        self.assertRaisesRegex(relations.ModelError, "moded: whoops", source.result, model, "whatevs", response)
 
     def test_model_init(self):
 

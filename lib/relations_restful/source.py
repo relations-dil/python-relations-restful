@@ -28,12 +28,14 @@ class Source(relations.Source):
                     setattr(self.session, key, arg)
 
     @staticmethod
-    def result(key, response):
+    def result(model, key, response):
         """
         Checks a response and returns the result
         """
 
-        response.raise_for_status()
+        if response.status_code >= 400:
+            raise relations.ModelError(model, response.json().get("message", "API Error"))
+
         return response.json()[key]
 
     def model_init(self, model):
@@ -70,7 +72,7 @@ class Source(relations.Source):
         for creating in models:
             values.append(creating._record.write({}))
 
-        records = self.result(model.PLURAL, self.session.post(f"{self.url}/{model.ENDPOINT}", json={model.PLURAL: values}))
+        records = self.result(model, model.PLURAL, self.session.post(f"{self.url}/{model.ENDPOINT}", json={model.PLURAL: values}))
 
         for index, creating in enumerate(models):
 
@@ -106,7 +108,7 @@ class Source(relations.Source):
         criteria = {}
         self.record_retrieve(model._record, criteria)
 
-        matches = self.result(model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))
+        matches = self.result(model, model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))
 
         if model._mode == "one" and len(matches) > 1:
             raise relations.ModelError(model, "more than one retrieved")
@@ -160,7 +162,7 @@ class Source(relations.Source):
             values = {}
             self.record_update(model._record, values, changed=True)
 
-            updated += self.result("updated", self.session.patch(
+            updated += self.result(model, "updated", self.session.patch(
                 f"{self.url}/{model.ENDPOINT}", json={"filter": criteria, model.PLURAL: values})
             )
 
@@ -171,7 +173,7 @@ class Source(relations.Source):
                 values = {}
                 self.record_update(updating._record, values)
 
-                updated += self.result("updated", self.session.patch(
+                updated += self.result(updating, "updated", self.session.patch(
                     f"{self.url}/{model.ENDPOINT}/{updating[model._id]}", json={model.SINGULAR: values})
                 )
 
@@ -211,4 +213,4 @@ class Source(relations.Source):
 
             raise relations.ModelError(model, "nothing to delete from")
 
-        return self.result("deleted", self.session.delete(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))
+        return self.result(model, "deleted", self.session.delete(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))
