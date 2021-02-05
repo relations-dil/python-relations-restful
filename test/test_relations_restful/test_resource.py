@@ -30,7 +30,8 @@ class SimpleResource(relations_restful.Resource):
 class PlainResource(relations_restful.Resource):
     MODEL = Plain
 
-class TestResource(relations_restful.unittest.TestCase):
+
+class TestRestful(relations_restful.unittest.TestCase):
 
     def setUp(self):
 
@@ -43,6 +44,9 @@ class TestResource(relations_restful.unittest.TestCase):
         restful.add_resource(PlainResource, '/plain')
 
         self.api = self.app.test_client()
+
+
+class TestExceptions(TestRestful):
 
     @unittest.mock.patch("traceback.format_exc")
     def test_exceptions(self, mock_traceback):
@@ -75,6 +79,151 @@ class TestResource(relations_restful.unittest.TestCase):
 
         self.assertStatusValue(response, 500, "message", "whoops")
         self.assertStatusValue(response, 500, "traceback", "adaisy")
+
+        @relations_restful.exceptions
+        def missing():
+            raise relations.ModelError(Simple(), "none retrieved")
+
+        self.app.add_url_rule('/missing', 'missing', missing)
+
+        self.assertStatusValue(self.api.get("/missing"), 404, "message", "simple: none retrieved")
+
+        @relations_restful.exceptions
+        def broken():
+            raise relations.ModelError(Simple(), "broken query")
+
+        self.app.add_url_rule('/broken', 'broken', broken)
+
+        self.assertStatusValue(self.api.get("/broken"), 500, "message", "simple: broken query")
+
+
+class TestResourceIdentity(TestRestful):
+
+    def test_thy(self):
+
+        class Init(ResourceModel):
+            id = int
+            name = str
+            status = str,"good"
+            meta = dict
+
+        class InitResource(relations_restful.ResourceIdentity):
+            MODEL = Init
+
+        resource = InitResource.thy()
+        self.assertEqual(resource.SINGULAR, "init")
+        self.assertEqual(resource.PLURAL, "inits")
+        self.assertEqual(resource.FIELDS, [])
+        self.assertEqual(resource.fields, [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True,
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            },
+            {
+                "name": "status",
+                "kind": "str",
+                "default": "good"
+            },
+            {
+                "name": "meta",
+                "kind": "dict",
+                "default": {}
+            }
+        ])
+
+        Init.SINGULAR = "inity"
+        InitResource.FIELDS = [
+            {
+                "name": "name",
+                "kind": "str",
+                "options": ["few"],
+                "required": True
+            }
+        ]
+        resource = InitResource.thy()
+        self.assertEqual(resource.SINGULAR, "inity")
+        self.assertEqual(resource.PLURAL, "initys")
+        self.assertEqual(resource.fields, [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "options": ["few"],
+                "required": True
+            },
+            {
+                "name": "status",
+                "kind": "str",
+                "default": "good"
+            },
+            {
+                "name": "meta",
+                "kind": "dict",
+                "default": {}
+            }
+        ])
+
+        Init.PLURAL = "inities"
+        InitResource.FIELDS = [
+            {
+                "name": "name",
+                "kind": "str",
+                "validation": "gone"
+            }
+        ]
+        resource = InitResource.thy()
+        self.assertEqual(resource.SINGULAR, "inity")
+        self.assertEqual(resource.PLURAL, "inities")
+        self.assertEqual(resource.fields, [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True,
+                "validation": "gone",
+            },
+            {
+                "name": "status",
+                "kind": "str",
+                "default": "good"
+            },
+            {
+                "name": "meta",
+                "kind": "dict",
+                "default": {}
+            }
+        ])
+
+        InitResource.SINGULAR = "initee"
+        resource = InitResource.thy()
+        self.assertEqual(resource.SINGULAR, "initee")
+        self.assertEqual(resource.PLURAL, "inities")
+
+        InitResource.PLURAL = "initiease"
+        resource = InitResource.thy()
+        self.assertEqual(resource.SINGULAR, "initee")
+        self.assertEqual(resource.PLURAL, "initiease")
+
+    def test_endpoints(self):
+
+        self.assertEqual(SimpleResource.thy().endpoints(), ["/simple", "/simple/<id>"])
+        self.assertEqual(PlainResource.thy().endpoints(), ["/plain"])
+
+class TestResource(TestRestful):
 
     def test___init__(self):
 
@@ -113,87 +262,6 @@ class TestResource(relations_restful.unittest.TestCase):
                 "default": {}
             }
         ])
-
-        Init.SINGULAR = "inity"
-        InitResource.FIELDS = [
-            {
-                "name": "name",
-                "kind": "str",
-                "options": ["few"],
-                "required": True
-            }
-        ]
-        resource = InitResource()
-        self.assertEqual(resource.SINGULAR, "inity")
-        self.assertEqual(resource.PLURAL, "initys")
-        self.assertEqual(resource.fields, [
-            {
-                "name": "id",
-                "kind": "int",
-                "readonly": True
-            },
-            {
-                "name": "name",
-                "kind": "str",
-                "options": ["few"],
-                "required": True
-            },
-            {
-                "name": "status",
-                "kind": "str",
-                "default": "good"
-            },
-            {
-                "name": "meta",
-                "kind": "dict",
-                "default": {}
-            }
-        ])
-
-        Init.PLURAL = "inities"
-        InitResource.FIELDS = [
-            {
-                "name": "name",
-                "kind": "str",
-                "validation": "gone"
-            }
-        ]
-        resource = InitResource()
-        self.assertEqual(resource.SINGULAR, "inity")
-        self.assertEqual(resource.PLURAL, "inities")
-        self.assertEqual(resource.fields, [
-            {
-                "name": "id",
-                "kind": "int",
-                "readonly": True
-            },
-            {
-                "name": "name",
-                "kind": "str",
-                "required": True,
-                "validation": "gone",
-            },
-            {
-                "name": "status",
-                "kind": "str",
-                "default": "good"
-            },
-            {
-                "name": "meta",
-                "kind": "dict",
-                "default": {}
-            }
-        ])
-
-        InitResource.SINGULAR = "initee"
-        resource = InitResource()
-        self.assertEqual(resource.SINGULAR, "initee")
-        self.assertEqual(resource.PLURAL, "inities")
-
-        InitResource.PLURAL = "initiease"
-        resource = InitResource()
-        self.assertEqual(resource.SINGULAR, "initee")
-        self.assertEqual(resource.PLURAL, "initiease")
 
     def test_criteria(self):
 
