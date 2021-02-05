@@ -55,7 +55,7 @@ def exceptions(endpoint):
 
 class ResourceIdentity:
     """
-    Intermiedate statuc type class for constructing mode information with a full resource
+    Intermediate static type class for constructing mode information with a full resource
     """
 
     MODEL = None
