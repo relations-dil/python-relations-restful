@@ -12,6 +12,7 @@ import traceback
 import werkzeug.exceptions
 
 import opengui
+import relations
 
 def exceptions(endpoint):
     """
@@ -31,6 +32,16 @@ def exceptions(endpoint):
                 "message": exception.description
             }, 400
 
+        except relations.ModelError as exception:
+
+            message = str(exception)
+
+            status_code = 404 if "none retrieved" in message else 500
+
+            response = {
+                "message": message,
+            }, status_code
+
         except Exception as exception:
 
             response = {
@@ -42,9 +53,9 @@ def exceptions(endpoint):
 
     return wrap
 
-class Resource(flask_restful.Resource):
+class ResourceIdentity:
     """
-    Base Model class for Relations Restful classes
+    Intermiedate statuc type class for constructing mode information with a full resource
     """
 
     MODEL = None
@@ -55,11 +66,19 @@ class Resource(flask_restful.Resource):
     model = None
     fields = None
 
-    def __init__(self, *args, **kwargs): # pylint: disable=too-many-branches
+    @classmethod
+    def thy(cls, self=None): # pylint: disable=too-many-branches
+        """
+        Base identity to be known without instantiating the class
+        """
 
-        super(Resource).__init__(*args, **kwargs)
+        # If self wasn't sent, we're just providing a shell of an instance
 
-        self.model = self.MODEL._thyself()
+        if self is None:
+            self = ResourceIdentity()
+            self.__dict__.update(cls.__dict__)
+
+        self.model = self.MODEL.thy()
 
         if self.SINGULAR is None:
             if hasattr(self.model, "SINGULAR") and self.model.SINGULAR is not None:
@@ -99,6 +118,33 @@ class Resource(flask_restful.Resource):
                 form_field.update(fields[model_field.name].to_dict())
 
             self.fields.append(form_field)
+
+        return self
+
+    def endpoints(self):
+        """
+        Lists the endpoints this resource had
+        """
+
+        endpoints = [f"/{self.SINGULAR}"]
+
+        if self.model.ID is not None:
+            endpoints.append(f"/{self.SINGULAR}/<id>")
+
+        return endpoints
+
+class Resource(flask_restful.Resource, ResourceIdentity):
+    """
+    Base Model class for Relations Restful classes
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        super(Resource).__init__(*args, **kwargs)
+
+        # Know thyself
+
+        self.thy(self)
 
     @staticmethod
     def criteria(verify=False):
