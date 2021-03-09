@@ -280,7 +280,7 @@ class TestResource(TestRestful):
         response = self.api.get("/criteria")
         self.assertStatusValue(response, 200, "criteria", {})
 
-        response = self.api.get("/criteria?a=1")
+        response = self.api.get("/criteria?a=1&limit=2")
         self.assertStatusValue(response, 200, "criteria", {"a": "1"})
 
         response = self.api.get("/criteria?a=1", json={"filter": {"a": 2}})
@@ -363,6 +363,24 @@ class TestResource(TestRestful):
 
         response = self.api.get("/simple", json={"filter": {"name": "no"}})
         self.assertStatusModel(response, 200, "simples", [])
+
+        Simple("sure").create()
+        Simple("fine").create()
+
+        response = self.api.get("/simple?limit=1&limit__start=1")
+        self.assertStatusModel(response, 200, "simples", [{"name": "sure"}])
+
+        response = self.api.get("/simple?limit__size=1&limit__page=3")
+        self.assertStatusModel(response, 200, "simples", [{"name": "ya"}])
+
+        simples = Simple.bulk()
+
+        for name in range(200):
+            simples.add(name)
+
+        simples.create()
+
+        self.assertEqual(len(self.api.get("/simple").json["simples"]), 100)
 
     def test_patch(self):
 
