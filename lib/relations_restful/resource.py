@@ -158,7 +158,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         criteria = {}
 
         if flask.request.args:
-            criteria.update(flask.request.args.to_dict())
+            criteria.update({name: value for name, value in flask.request.args.to_dict().items() if not name.startswith("limit")})
 
         if flask.request.json is not None and "filter" in flask.request.json:
             criteria.update(flask.request.json["filter"])
@@ -204,9 +204,23 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         """
 
         if id is not None:
-            return {self.SINGULAR: dict(self.MODEL.one(**{self.model._id: id}))}, 200
+            return {self.SINGULAR: dict(self.MODEL.one(**{self.model._id: id}))}
 
-        return {self.PLURAL: [dict(model) for model in self.MODEL.many(**self.criteria())]}, 200
+        limit = {}
+
+        if "limit" in flask.request.args:
+            limit["limit"] = int(flask.request.args["limit"])
+
+        if "limit__size" in flask.request.args:
+            limit["limit"] = int(flask.request.args["limit__size"])
+
+        if "limit__start" in flask.request.args:
+            limit["start"] = int(flask.request.args["limit__start"])
+
+        if "limit__page" in flask.request.args:
+            limit["page"] = int(flask.request.args["limit__page"])
+
+        return {self.PLURAL: [dict(model) for model in self.MODEL.many(**self.criteria()).limit(**limit)]}, 200
 
     @exceptions
     def patch(self, id=None):
