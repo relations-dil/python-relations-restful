@@ -280,11 +280,45 @@ class TestResource(TestRestful):
         response = self.api.get("/criteria")
         self.assertStatusValue(response, 200, "criteria", {})
 
-        response = self.api.get("/criteria?a=1&limit=2")
+        response = self.api.get("/criteria?a=1&sort=a&limit=2")
         self.assertStatusValue(response, 200, "criteria", {"a": "1"})
 
         response = self.api.get("/criteria?a=1", json={"filter": {"a": 2}})
         self.assertStatusValue(response, 200, "criteria", {"a": 2})
+
+    def test_sort(self):
+
+        @relations_restful.exceptions
+        def sort():
+            return {"sort": relations_restful.Resource.sort()}
+
+        self.app.add_url_rule('/sort', 'sort', sort)
+
+        response = self.api.get("/sort")
+        self.assertStatusValue(response, 200, "sort", [])
+
+        response = self.api.get("/sort?sort=a,-b")
+        self.assertStatusValue(response, 200, "sort", ["a", "-b"])
+
+        response = self.api.get("/sort?sort=-a", json={"sort": ["b", "+c"]})
+        self.assertStatusValue(response, 200, "sort", ["-a", "b", "+c"])
+
+    def test_limit(self):
+
+        @relations_restful.exceptions
+        def limit():
+            return {"limit": relations_restful.Resource.limit()}
+
+        self.app.add_url_rule('/limit', 'limit', limit)
+
+        response = self.api.get("/limit")
+        self.assertStatusValue(response, 200, "limit", {})
+
+        response = self.api.get("/limit?limit__per_page=1&limit__page=2")
+        self.assertStatusValue(response, 200, "limit", {"per_page": 1, "page": 2})
+
+        response = self.api.get("/limit?limit=1", json={"limit": {"per_page": "2", "page": 3}})
+        self.assertStatusValue(response, 200, "limit", {"limit": 1, "per_page": 2, "page": 3})
 
     def test_options(self):
 
@@ -370,7 +404,7 @@ class TestResource(TestRestful):
         response = self.api.get("/simple?limit=1&limit__start=1")
         self.assertStatusModel(response, 200, "simples", [{"name": "sure"}])
 
-        response = self.api.get("/simple?limit__size=1&limit__page=3")
+        response = self.api.get("/simple?limit__per_page=1&limit__page=3")
         self.assertStatusModel(response, 200, "simples", [{"name": "ya"}])
 
         simples = Simple.bulk()

@@ -105,10 +105,18 @@ class Source(relations.Source):
 
         model._collate()
 
-        criteria = {}
-        self.record_retrieve(model._record, criteria)
+        body = {"filter": {}}
+        self.record_retrieve(model._record, body["filter"])
 
-        matches = self.result(model, model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json={"filter": criteria}))
+        if model._sort:
+            body["sort"] = model._sort
+
+        if model._limit is not None:
+            body["limit"] = {"per_page": model._limit}
+            if model._offset:
+                body["limit"]["start"] = model._offset
+
+        matches = self.result(model, model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json=body))
 
         if model._mode == "one" and len(matches) > 1:
             raise relations.ModelError(model, "more than one retrieved")

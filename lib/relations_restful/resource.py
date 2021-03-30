@@ -158,12 +158,52 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         criteria = {}
 
         if flask.request.args:
-            criteria.update({name: value for name, value in flask.request.args.to_dict().items() if not name.startswith("limit")})
+            criteria.update({
+                name: value
+                for name, value in flask.request.args.to_dict().items()
+                if not name.startswith("limit") and name != "sort"
+            })
 
         if flask.request.json is not None and "filter" in flask.request.json:
             criteria.update(flask.request.json["filter"])
 
         return criteria
+
+    @staticmethod
+    def sort():
+        """
+        Gets soirt from the flask request
+        """
+
+        sort = []
+
+        if flask.request.args and 'sort' in flask.request.args:
+            sort.extend(flask.request.args['sort'].split(','))
+
+        if flask.request.json is not None and "sort" in flask.request.json:
+            sort.extend(flask.request.json['sort'])
+
+        return sort
+
+    @staticmethod
+    def limit():
+        """
+        Gets limit from the flask request
+        """
+
+        limit = {}
+
+        if flask.request.args:
+            limit.update({
+                name.split('__')[-1]: int(value)
+                for name, value in flask.request.args.to_dict().items()
+                if name.startswith("limit")
+            })
+
+        if flask.request.json is not None and "limit" in flask.request.json:
+            limit.update({name: int(value) for name, value in flask.request.json["limit"].items()})
+
+        return limit
 
     @exceptions
     def options(self, id=None):
@@ -206,21 +246,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         if id is not None:
             return {self.SINGULAR: dict(self.MODEL.one(**{self.model._id: id}))}
 
-        limit = {}
-
-        if "limit" in flask.request.args:
-            limit["limit"] = int(flask.request.args["limit"])
-
-        if "limit__size" in flask.request.args:
-            limit["limit"] = int(flask.request.args["limit__size"])
-
-        if "limit__start" in flask.request.args:
-            limit["start"] = int(flask.request.args["limit__start"])
-
-        if "limit__page" in flask.request.args:
-            limit["page"] = int(flask.request.args["limit__page"])
-
-        return {self.PLURAL: [dict(model) for model in self.MODEL.many(**self.criteria()).limit(**limit)]}, 200
+        return {self.PLURAL: [dict(model) for model in self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())]}, 200
 
     @exceptions
     def patch(self, id=None):
