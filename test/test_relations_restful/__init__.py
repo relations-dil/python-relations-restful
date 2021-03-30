@@ -62,23 +62,23 @@ class TestRestful(relations_restful.unittest.TestCase):
 
         api = app.test_client()
 
-        response = api.post("/peanutbutter", json={"peanutbutter": {"name": "chunky"}})
+        response = api.post("/peanut_butter", json={"peanut_butter": {"name": "chunky"}})
 
-        self.assertStatusModel(response, 201, "peanutbutter", {
+        self.assertStatusModel(response, 201, "peanut_butter", {
             "name": "chunky"
         })
 
-        id = response.json["peanutbutter"]["id"]
+        id = response.json["peanut_butter"]["id"]
 
-        response = api.get(f"/peanutbutter/{id}")
+        response = api.get(f"/peanut_butter/{id}")
 
-        self.assertStatusModel(response, 200, "peanutbutter", {
+        self.assertStatusModel(response, 200, "peanut_butter", {
             "name": "chunky"
         })
 
-        response = api.get(f"/peanutbutter/0")
+        response = api.get(f"/peanut_butter/0")
 
-        self.assertStatusModel(response, 404, "message", 'peanutbutter: none retrieved')
+        self.assertStatusModel(response, 404, "message", 'peanut_butter: none retrieved')
 
         response = api.get(f"/jelly")
 

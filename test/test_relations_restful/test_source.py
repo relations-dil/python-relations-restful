@@ -241,6 +241,12 @@ class TestSource(unittest.TestCase):
         self.assertEqual(model[0].test[0].id, 1)
         self.assertEqual(model[0].test[0].case.name, "persons")
 
+        self.assertEqual(Unit.many().name, ["people", "stuff"])
+        self.assertEqual(Unit.many().sort("-name").name, ["stuff", "people"])
+        self.assertEqual(Unit.many().sort("-name").limit(1, 1).name, ["people"])
+        self.assertEqual(Unit.many().sort("-name").limit(0).name, [])
+        self.assertEqual(Unit.many(name="people").limit(1).name, ["people"])
+
     def test_field_update(self):
 
         # Standard
