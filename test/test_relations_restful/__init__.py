@@ -18,6 +18,7 @@ class PeanutButter(ResourceModel):
     name = str
 
 class Jelly(ResourceModel):
+    PLURAL = "jellies"
     ID = None
     name = str
 
@@ -62,6 +63,26 @@ class TestRestful(relations_restful.unittest.TestCase):
 
         api = app.test_client()
 
+        response = api.get("/model")
+
+        self.assertStatusModel(response, 200, "models", [
+            {
+                "name": "Jelly",
+                "singular": "jelly",
+                "plural": "jellies"
+            },
+            {
+                "name": "Time",
+                "singular": "time",
+                "plural": "times"
+            },
+            {
+                "name": "PeanutButter",
+                "singular": "peanut_butter",
+                "plural": "peanut_butters"
+            }
+        ])
+
         response = api.post("/peanut_butter", json={"peanut_butter": {"name": "chunky"}})
 
         self.assertStatusModel(response, 201, "peanut_butter", {
@@ -82,7 +103,7 @@ class TestRestful(relations_restful.unittest.TestCase):
 
         response = api.get(f"/jelly")
 
-        self.assertStatusValue(response, 200, "jellys", [])
+        self.assertStatusValue(response, 200, "jellies", [])
 
         response = api.get(f"/jelly/0")
 
