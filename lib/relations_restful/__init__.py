@@ -4,6 +4,8 @@ Utilities for Relations RESTful
 
 import inspect
 
+import flask_restful
+
 from relations_restful.resource import ResourceIdentity, Resource, exceptions
 from relations_restful.source import Source
 
@@ -38,6 +40,30 @@ def attach(restful, module, models):
     Attach all Reources to a Restful
     """
 
+    class Model(flask_restful.Resource):
+        """
+        Custom class for each call
+        """
+
+        MODELS = []
+
+        def get(self):
+            """
+            List all models
+            """
+            return {"models": self.MODELS}
+
+    restful.add_resource(Model, "/model")
+
     for resource in resources(module) + ensure(module, models):
+
+        thy = resource.thy()
+
+        Model.MODELS.append({
+            "name": resource.MODEL.__name__,
+            "singular": thy.SINGULAR,
+            "plural": thy.PLURAL
+        })
+
         if resource.__name__.lower() not in restful.endpoints:
-            restful.add_resource(resource, *resource.thy().endpoints())
+            restful.add_resource(resource, *thy.endpoints())
