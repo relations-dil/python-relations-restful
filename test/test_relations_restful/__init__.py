@@ -67,17 +67,20 @@ class TestRestful(relations_restful.unittest.TestCase):
 
         self.assertStatusModel(response, 200, "models", [
             {
-                "name": "Jelly",
+                "id": None,
+                "title": "Jelly",
                 "singular": "jelly",
                 "plural": "jellies"
             },
             {
-                "name": "Time",
+                "id": "id",
+                "title": "Time",
                 "singular": "time",
                 "plural": "times"
             },
             {
-                "name": "PeanutButter",
+                "id": "id",
+                "title": "PeanutButter",
                 "singular": "peanut_butter",
                 "plural": "peanut_butters"
             }
