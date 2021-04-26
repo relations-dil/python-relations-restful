@@ -10,6 +10,7 @@ import werkzeug.exceptions
 import relations
 import relations_restful
 
+
 class ResourceModel(relations.Model):
     SOURCE = "TestRestfulResource"
 
@@ -97,6 +98,31 @@ class TestExceptions(TestRestful):
         self.assertStatusValue(self.api.get("/broken"), 500, "message", "simple: broken query")
 
 
+class Whoops(relations.Model):
+    id = int
+    name = str
+
+class WhoopsResource(relations_restful.Resource):
+    MODEL = Whoops
+
+class TestResourceError(unittest.TestCase):
+
+    maxDiff = None
+
+    def test___init__(self):
+
+        error = relations_restful.ResourceError("unittest", "oops")
+
+        self.assertEqual(error.resource, "unittest")
+        self.assertEqual(error.message, "oops")
+
+    def test___str__(self):
+
+        error = relations_restful.ResourceError(WhoopsResource(), "adaisy")
+
+        self.assertEqual(str(error), "WhoopsResource: adaisy")
+
+
 class TestResourceIdentity(TestRestful):
 
     def test_thy(self):
@@ -136,6 +162,7 @@ class TestResourceIdentity(TestRestful):
                 "default": {}
             }
         ])
+        self.assertEqual(resource.LIST, ['id', 'name'])
 
         Init.SINGULAR = "inity"
         InitResource.FIELDS = [
@@ -217,6 +244,15 @@ class TestResourceIdentity(TestRestful):
         resource = InitResource.thy()
         self.assertEqual(resource.SINGULAR, "initee")
         self.assertEqual(resource.PLURAL, "initiease")
+
+        InitResource.LIST = ["name"]
+        resource = InitResource.thy()
+        self.assertEqual(resource.SINGULAR, "initee")
+        self.assertEqual(resource.PLURAL, "initiease")
+        self.assertEqual(resource.LIST, ['name'])
+
+        InitResource.LIST = ["nope"]
+        self.assertRaisesRegex(relations_restful.ResourceError, "cannot find field nope from list", InitResource.thy)
 
     def test_endpoints(self):
 
