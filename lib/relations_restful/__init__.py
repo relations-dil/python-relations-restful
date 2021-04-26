@@ -6,7 +6,7 @@ import inspect
 
 import flask_restful
 
-from relations_restful.resource import ResourceIdentity, Resource, exceptions
+from relations_restful.resource import ResourceError, ResourceIdentity, Resource, exceptions
 from relations_restful.source import Source
 
 def resources(module):
@@ -63,7 +63,8 @@ def attach(restful, module, models):
             "id": thy.model._id,
             "title": thy.model.TITLE,
             "singular": thy.SINGULAR,
-            "plural": thy.PLURAL
+            "plural": thy.PLURAL,
+            "list": thy.LIST
         })
 
         if resource.__name__.lower() not in restful.endpoints:

@@ -65,24 +65,27 @@ class TestRestful(relations_restful.unittest.TestCase):
 
         response = api.get("/model")
 
-        self.assertStatusModel(response, 200, "models", [
+        self.assertStatusValue(response, 200, "models", [
             {
                 "id": None,
                 "title": "Jelly",
                 "singular": "jelly",
-                "plural": "jellies"
+                "plural": "jellies",
+                "list": ["name"]
             },
             {
                 "id": "id",
                 "title": "Time",
                 "singular": "time",
-                "plural": "times"
+                "plural": "times",
+                "list": ["id", "name"]
             },
             {
                 "id": "id",
                 "title": "PeanutButter",
                 "singular": "peanut_butter",
-                "plural": "peanut_butters"
+                "plural": "peanut_butters",
+                "list": ["id", "name"]
             }
         ])
 

@@ -53,6 +53,23 @@ def exceptions(endpoint):
 
     return wrap
 
+class ResourceError(Exception):
+    """
+    Generic resource Error for easier tracing
+    """
+
+    def __init__(self, resource, message):
+
+        self.resource = resource
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        """
+        Might want to mention the resource and info about it
+        """
+        return f"{self.resource.__class__.__name__}: {self.message}"
+
 class ResourceIdentity:
     """
     Intermediate static type class for constructing mode information with a full resource
@@ -62,6 +79,7 @@ class ResourceIdentity:
     SINGULAR = None
     PLURAL = None
     FIELDS = None
+    LIST = None
 
     model = None
     fields = None
@@ -118,6 +136,21 @@ class ResourceIdentity:
                 form_field.update(fields[model_field.name].to_dict())
 
             self.fields.append(form_field)
+
+        if self.LIST is None:
+            self.LIST = []
+            if self.model._id:
+                self.LIST = [self.model._id]
+            for unique in sorted(self.model._unique.keys()):
+                for field in self.model._unique[unique]:
+                    if field not in self.LIST:
+                        self.LIST.append(field)
+
+        # Make sure all the list checks out
+
+        for field in self.LIST:
+            if field not in self.model._fields:
+                raise ResourceError(self, f"cannot find field {field} from list")
 
         return self
 
