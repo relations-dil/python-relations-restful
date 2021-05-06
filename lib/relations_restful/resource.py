@@ -4,6 +4,7 @@ Resource module for Relations and Flask RESTful
 
 # pylint: disable=not-callable
 
+
 import flask
 import flask_restful
 
@@ -138,13 +139,9 @@ class ResourceIdentity:
             self.fields.append(form_field)
 
         if self.LIST is None:
-            self.LIST = []
-            if self.model._id:
-                self.LIST = [self.model._id]
-            for unique in sorted(self.model._unique.keys()):
-                for field in self.model._unique[unique]:
-                    if field not in self.LIST:
-                        self.LIST.append(field)
+            self.LIST = list(self.model._label)
+            if self.model._id and self.model._id not in self.LIST:
+                self.LIST.insert(0, self.model._id)
 
         # Make sure all the list checks out
 
@@ -279,7 +276,9 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         if id is not None:
             return {self.SINGULAR: dict(self.MODEL.one(**{self.model._id: id}))}
 
-        return {self.PLURAL: [dict(model) for model in self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())]}, 200
+        models = self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())
+
+        return {self.PLURAL: [dict(model) for model in models], "overflow": models.overflow}, 200
 
     @exceptions
     def patch(self, id=None):

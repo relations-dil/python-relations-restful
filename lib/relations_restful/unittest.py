@@ -136,6 +136,7 @@ class TestCase(unittest.TestCase):
         """
 
         self.assertEqual(response.status_code, code, response.json)
+        self.assertEqual(len(models), len(response.json[key]), "model count")
 
         for index, model in enumerate(models):
             self.assertConsistent(model, response.json[key][index])

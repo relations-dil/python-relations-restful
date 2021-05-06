@@ -165,6 +165,7 @@ class TestResourceIdentity(TestRestful):
         self.assertEqual(resource.LIST, ['id', 'name'])
 
         Init.SINGULAR = "inity"
+        Init.LABEL = ["name", "status"]
         InitResource.FIELDS = [
             {
                 "name": "name",
@@ -199,6 +200,7 @@ class TestResourceIdentity(TestRestful):
                 "default": {}
             }
         ])
+        self.assertEqual(resource.LIST, ['id', 'name', 'status'])
 
         Init.PLURAL = "inities"
         InitResource.FIELDS = [
@@ -220,7 +222,6 @@ class TestResourceIdentity(TestRestful):
             {
                 "name": "name",
                 "kind": "str",
-                "required": True,
                 "validation": "gone",
             },
             {
@@ -430,18 +431,26 @@ class TestResource(TestRestful):
 
         response = self.api.get("/simple", json={"filter": {"name": "ya"}})
         self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
+        self.assertStatusValue(response, 200, "overflow", False)
 
         response = self.api.get("/simple", json={"filter": {"name": "no"}})
         self.assertStatusModel(response, 200, "simples", [])
+        self.assertStatusValue(response, 200, "overflow", False)
 
         Simple("sure").create()
         Simple("fine").create()
 
+        response = self.api.get("/simple", json={"filter": {"like": "y"}})
+        self.assertStatusModels(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
+        self.assertStatusValue(response, 200, "overflow", False)
+
         response = self.api.get("/simple?limit=1&limit__start=1")
-        self.assertStatusModel(response, 200, "simples", [{"name": "sure"}])
+        self.assertStatusModels(response, 200, "simples", [{"name": "sure"}])
+        self.assertStatusValue(response, 200, "overflow", True)
 
         response = self.api.get("/simple?limit__per_page=1&limit__page=3")
-        self.assertStatusModel(response, 200, "simples", [{"name": "ya"}])
+        self.assertStatusModels(response, 200, "simples", [{"name": "ya"}])
+        self.assertStatusValue(response, 200, "overflow", True)
 
         simples = Simple.bulk()
 
