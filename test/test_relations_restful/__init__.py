@@ -71,6 +71,7 @@ class TestRestful(relations_restful.unittest.TestCase):
                 "title": "Jelly",
                 "singular": "jelly",
                 "plural": "jellies",
+                "label": ["name"],
                 "list": ["name"]
             },
             {
@@ -78,6 +79,7 @@ class TestRestful(relations_restful.unittest.TestCase):
                 "title": "Time",
                 "singular": "time",
                 "plural": "times",
+                "label": ["name"],
                 "list": ["id", "name"]
             },
             {
@@ -85,6 +87,7 @@ class TestRestful(relations_restful.unittest.TestCase):
                 "title": "PeanutButter",
                 "singular": "peanut_butter",
                 "plural": "peanut_butters",
+                "label": ["name"],
                 "list": ["id", "name"]
             }
         ])

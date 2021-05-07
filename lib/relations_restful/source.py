@@ -36,7 +36,12 @@ class Source(relations.Source):
         if response.status_code >= 400:
             raise relations.ModelError(model, response.json().get("message", "API Error"))
 
-        return response.json()[key]
+        body = response.json()
+
+        if "overflow" in body:
+            model.overflow = model.overflow or body["overflow"]
+
+        return body[key]
 
     def model_init(self, model):
         """
@@ -107,6 +112,9 @@ class Source(relations.Source):
 
         body = {"filter": {}}
         self.record_retrieve(model._record, body["filter"])
+
+        if model._like:
+            body["filter"]["like"] = model._like
 
         if model._sort:
             body["sort"] = model._sort

@@ -61,6 +61,7 @@ def attach(restful, module, models):
 
         Model.MODELS.append({
             "id": thy.model._id,
+            "label": thy.model._label,
             "title": thy.model.TITLE,
             "singular": thy.SINGULAR,
             "plural": thy.PLURAL,

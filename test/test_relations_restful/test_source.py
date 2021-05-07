@@ -136,14 +136,16 @@ class TestSource(unittest.TestCase):
 
         model = unittest.mock.MagicMock()
         model.NAME = "moded"
+        model.overflow = False
 
         # good
 
         response = unittest.mock.MagicMock()
         response.status_code = 200
-        response.json.return_value = {"name": "value"}
+        response.json.return_value = {"name": "value", "overflow": True}
 
         self.assertEqual(source.result(model, "name", response), "value")
+        self.assertTrue(model.overflow)
 
         # bad
 
@@ -225,6 +227,12 @@ class TestSource(unittest.TestCase):
         self.assertIsNone(model.retrieve(False))
 
         unit = Unit.one(name="people")
+
+        self.assertEqual(unit.id, 1)
+        self.assertEqual(unit._action, "update")
+        self.assertEqual(unit._record._action, "update")
+
+        unit = Unit.one(like="p")
 
         self.assertEqual(unit.id, 1)
         self.assertEqual(unit._action, "update")
