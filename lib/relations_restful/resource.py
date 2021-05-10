@@ -252,8 +252,10 @@ class Resource(flask_restful.Resource, ResourceIdentity):
                 field.content["style"] = labels.style
                 field.content["overflow"] = parent.overflow
 
-                if (field.value is not None and field.value not in labels):
-                    labels = relation.Parent.one(**{relation.parent_field: field.value}).labels()
+                value = field.value if field.value is not None else field.original
+
+                if (not like and value is not None and value not in labels):
+                    labels = relation.Parent.one(**{relation.parent_field: value}).labels()
                     field.content["overflow"] = True
 
                 field.options = labels.ids

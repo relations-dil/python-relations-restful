@@ -382,7 +382,9 @@ class TestResource(TestRestful):
             likes={
                 "simple_id": "n"
             },
-            values={}
+            values={
+                "simple_id": 1
+            }
         ).to_list(), [
             {
                 "name": "simple_id",
@@ -392,7 +394,8 @@ class TestResource(TestRestful):
                 "like": "n",
                 "style": [None],
                 "overflow": False,
-                "required": True
+                "required": True,
+                "value": 1
             },
             {
                 "name": "name",
@@ -419,6 +422,33 @@ class TestResource(TestRestful):
                 "style": [None],
                 "overflow": True,
                 "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        self.assertEqual(PlainResource().labeling(
+            likes={},
+            values={},
+            originals={
+                "simple_id": 1
+            }
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    1: ["ya"]
+                },
+                "style": [None],
+                "overflow": True,
+                "required": True,
+                "original": 1,
+                "value": 1
             },
             {
                 "name": "name",
