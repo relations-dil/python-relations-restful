@@ -249,7 +249,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
                 labels = parent.labels()
                 field.options = labels.ids
                 field.content["labels"] = labels.labels
-                field.content["format"] = labels.format
+                field.content["style"] = labels.style
                 field.content["overflow"] = parent.overflow
 
         return fields
@@ -268,7 +268,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
                 labels = relation.Parent.many(**{f"{relation.parent_field}__in": model[field.name]}).labels()
                 parents[field.name] = {
                     "labels": labels.labels,
-                    "format": labels.format
+                    "style": labels.style
                 }
 
         return parents

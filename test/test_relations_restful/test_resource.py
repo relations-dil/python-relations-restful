@@ -364,7 +364,7 @@ class TestResource(TestRestful):
                 "labels": {
                     1: ["ya"]
                 },
-                "format": [None],
+                "style": [None],
                 "overflow": False,
                 "required": True
             },
@@ -386,7 +386,7 @@ class TestResource(TestRestful):
                 "kind": "int",
                 "options": [],
                 "labels": {},
-                "format": [None],
+                "style": [None],
                 "overflow": False,
                 "required": True
             },
@@ -408,7 +408,7 @@ class TestResource(TestRestful):
         self.assertEqual(PlainResource.parenting(Plain.many()), {
             "simple_id": {
                 "labels": {1: ["ya"]},
-                "format": [None]
+                "style": [None]
             }
         })
 
@@ -531,7 +531,7 @@ class TestResource(TestRestful):
                 "labels": {
                     '1': ["ya"]
                 },
-                "format": [None],
+                "style": [None],
                 "overflow": False,
                 "required": True
             },
@@ -549,7 +549,7 @@ class TestResource(TestRestful):
                 "kind": "int",
                 "options": [],
                 "labels": {},
-                "format": [None],
+                "style": [None],
                 "overflow": False,
                 "required": True
             },
@@ -587,7 +587,7 @@ class TestResource(TestRestful):
         self.assertStatusValue(response, 200, "parents", {
             "simple_id": {
                 "labels": {'1': ["ya"]},
-                "format": [None]
+                "style": [None]
             }
         })
 

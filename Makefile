@@ -15,7 +15,7 @@ ENVIRONMENT=-e PYTHONDONTWRITEBYTECODE=1 \
 .PHONY: build shell debug test lint verify tag untag
 
 build:
-	docker build . -t $(ACCOUNT)/$(IMAGE):$(VERSION)
+	docker build --no-cache . -t $(ACCOUNT)/$(IMAGE):$(VERSION)
 
 shell:
 	docker run $(TTY) $(VOLUMES) $(ENVIRONMENT) -p 127.0.0.1:$(DEBUG_PORT):5678 $(ACCOUNT)/$(IMAGE):$(VERSION) sh
