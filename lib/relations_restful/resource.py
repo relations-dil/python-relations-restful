@@ -130,7 +130,7 @@ class ResourceIdentity:
 
             if model_field.default is not None:
                 form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
-            elif not model_field.none:
+            elif not model_field.none or model_field.name in self.model._label:
                 form_field["required"] = True
 
             if model_field.name in fields.names:
@@ -235,6 +235,44 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         return limit
 
+    def labeling(self, values=None, originals=None):
+        """
+        Apply options and labels to fields
+        """
+
+        fields = opengui.Fields(values=values or originals, originals=originals, fields=self.fields)
+
+        for field in fields:
+            relation = self.model._ancestor(field.name)
+            if relation is not None:
+                parent = relation.Parent.many()
+                labels = parent.labels()
+                field.options = labels.ids
+                field.content["labels"] = labels.labels
+                field.content["format"] = labels.format
+                field.content["overflow"] = parent.overflow
+
+        return fields
+
+    @staticmethod
+    def parenting(model):
+        """
+        Generate all the parent lookups
+        """
+
+        parents = {}
+
+        for field in model._fields._order:
+            relation = model._ancestor(field.name)
+            if relation is not None:
+                labels = relation.Parent.many(**{f"{relation.parent_field}__in": model[field.name]}).labels()
+                parents[field.name] = {
+                    "labels": labels.labels,
+                    "format": labels.format
+                }
+
+        return parents
+
     @exceptions
     def options(self, id=None):
         """
@@ -245,11 +283,11 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if id is None:
 
-            return opengui.Fields(values=values, fields=self.fields).to_dict(), 200
+            return self.labeling(values).to_dict(), 200
 
         originals = dict(self.MODEL.one(**{self.model._id: id}))
 
-        return opengui.Fields(values=values or originals, originals=originals, fields=self.fields).to_dict(), 200
+        return self.labeling(values, originals).to_dict(), 200
 
     @exceptions
     def post(self):
@@ -274,11 +312,12 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         """
 
         if id is not None:
-            return {self.SINGULAR: dict(self.MODEL.one(**{self.model._id: id}))}
+            model = self.MODEL.one(**{self.model._id: id})
+            return {self.SINGULAR: dict(model), "parents": self.parenting(model)}
 
         models = self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())
 
-        return {self.PLURAL: [dict(model) for model in models], "overflow": models.overflow}, 200
+        return {self.PLURAL: [dict(model) for model in models], "overflow": models.overflow, "parents": self.parenting(models)}, 200
 
     @exceptions
     def patch(self, id=None):

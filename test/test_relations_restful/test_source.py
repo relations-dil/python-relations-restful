@@ -27,12 +27,12 @@ relations.OneToMany(Simple, Plain)
 
 class Unit(SourceModel):
     id = int
-    name = str
+    name = str, {"format": "fancy"}
 
 class Test(SourceModel):
     id = int
     unit_id = int
-    name = str
+    name = str, {"format": "shmancy"}
 
 class Case(SourceModel):
     id = int
@@ -254,6 +254,38 @@ class TestSource(unittest.TestCase):
         self.assertEqual(Unit.many().sort("-name").limit(1, 1).name, ["people"])
         self.assertEqual(Unit.many().sort("-name").limit(0).name, [])
         self.assertEqual(Unit.many(name="people").limit(1).name, ["people"])
+
+    def test_model_labels(self):
+
+        Unit("people").create().test.add("stuff").add("things").create()
+
+        labels = Unit.many().labels()
+
+        self.assertEqual(labels.id, "id")
+        self.assertEqual(labels.label, ["name"])
+        self.assertEqual(labels.parents, {})
+        self.assertEqual(labels.format, ["fancy"])
+
+        self.assertEqual(labels.ids, [1])
+        self.assertEqual(labels.labels,{1: ["people"]})
+
+        labels = Test.many().labels()
+
+        self.assertEqual(labels.id, "id")
+        self.assertEqual(labels.label, ["unit_id", "name"])
+
+        self.assertEqual(labels.parents["unit_id"].id, "id")
+        self.assertEqual(labels.parents["unit_id"].label, ["name"])
+        self.assertEqual(labels.parents["unit_id"].parents, {})
+        self.assertEqual(labels.parents["unit_id"].format, ["fancy"])
+
+        self.assertEqual(labels.format, ["fancy", "shmancy"])
+
+        self.assertEqual(labels.ids, [1, 2])
+        self.assertEqual(labels.labels, {
+            1: ["people", "stuff"],
+            2: ["people", "things"]
+        })
 
     def test_field_update(self):
 

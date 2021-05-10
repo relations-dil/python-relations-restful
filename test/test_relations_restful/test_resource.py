@@ -7,6 +7,8 @@ import flask
 import flask_restful
 import werkzeug.exceptions
 
+import opengui
+
 import relations
 import relations_restful
 
@@ -223,6 +225,7 @@ class TestResourceIdentity(TestRestful):
                 "name": "name",
                 "kind": "str",
                 "validation": "gone",
+                "required": True
             },
             {
                 "name": "status",
@@ -299,6 +302,57 @@ class TestResource(TestRestful):
                 "default": {}
             }
         ])
+
+    def test_labeling(self):
+
+        self.assertEqual(SimpleResource().labeling().to_list(), [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True,
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        Simple("ya").create()
+
+        self.assertEqual(PlainResource().labeling().to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    1: ["ya"]
+                },
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+    def test_parenting(self):
+
+        Simple("ya").create().plain.add("sure").create()
+
+        Simple("whatevs").create()
+
+        self.assertEqual(SimpleResource.parenting(Simple.many()), {})
+
+        self.assertEqual(PlainResource.parenting(Plain.many()), {
+            "simple_id": {
+                "labels": {1: ["ya"]},
+                "format": [None]
+            }
+        })
 
     def test_criteria(self):
 
@@ -410,6 +464,26 @@ class TestResource(TestRestful):
             }
         ], errors=[])
 
+        response = self.api.options(f"/plain")
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    '1': ["ya"]
+                },
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ], errors=[])
+
     def test_post(self):
 
         response = self.api.post("/simple")
@@ -426,6 +500,21 @@ class TestResource(TestRestful):
     def test_get(self):
 
         simple = Simple("ya").create()
+        plain = simple.plain.add("whatevs").create()
+
+        response = self.api.get(f"/simple")
+        self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
+        self.assertStatusValue(response, 200, "parents", {})
+
+        response = self.api.get(f"/plain")
+        self.assertStatusModel(response, 200, "plains", [{"simple_id": simple.id, "name": "whatevs"}])
+        self.assertStatusValue(response, 200, "parents", {
+            "simple_id": {
+                "labels": {'1': ["ya"]},
+                "format": [None]
+            }
+        })
+
         response = self.api.get(f"/simple/{simple.id}")
         self.assertStatusModel(response, 200, "simple", {"id": simple.id, "name": "ya"})
 
@@ -451,6 +540,7 @@ class TestResource(TestRestful):
         response = self.api.get("/simple?limit__per_page=1&limit__page=3")
         self.assertStatusModels(response, 200, "simples", [{"name": "ya"}])
         self.assertStatusValue(response, 200, "overflow", True)
+        self.assertStatusValue(response, 200, "parents", {})
 
         simples = Simple.bulk()
 
