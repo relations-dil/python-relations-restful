@@ -235,7 +235,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         return limit
 
-    def labeling(self, values=None, originals=None):
+    def labeling(self, likes, values, originals=None):
         """
         Apply options and labels to fields
         """
@@ -245,7 +245,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         for field in fields:
             relation = self.model._ancestor(field.name)
             if relation is not None:
-                parent = relation.Parent.many()
+                parent = relation.Parent.many(**{"like": likes[name] for name in likes if name==field.name})
                 labels = parent.labels()
                 field.options = labels.ids
                 field.content["labels"] = labels.labels
@@ -280,14 +280,15 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         """
 
         values = (flask.request.json or {}).get(self.SINGULAR)
+        likes = (flask.request.json or {}).get("likes", {})
 
         if id is None:
 
-            return self.labeling(values).to_dict(), 200
+            return self.labeling(likes, values).to_dict(), 200
 
         originals = dict(self.MODEL.one(**{self.model._id: id}))
 
-        return self.labeling(values, originals).to_dict(), 200
+        return self.labeling(likes, values, originals).to_dict(), 200
 
     @exceptions
     def post(self):

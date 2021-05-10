@@ -305,7 +305,15 @@ class TestResource(TestRestful):
 
     def test_labeling(self):
 
-        self.assertEqual(SimpleResource().labeling().to_list(), [
+        self.assertEqual(SimpleResource().labeling(
+            likes={},
+            values={
+                "name": "ya"
+            },
+            originals={
+                "name": "sure"
+            }
+        ).to_list(), [
             {
                 "name": "id",
                 "kind": "int",
@@ -314,13 +322,41 @@ class TestResource(TestRestful):
             {
                 "name": "name",
                 "kind": "str",
-                "required": True
+                "required": True,
+                "value": "ya",
+                "original": "sure"
+            }
+        ])
+
+        self.assertEqual(SimpleResource().labeling(
+            likes={},
+            values={},
+            originals={
+                "name": "sure"
+            }
+        ).to_list(), [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True,
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True,
+                "value": "sure",
+                "original": "sure"
             }
         ])
 
         Simple("ya").create()
 
-        self.assertEqual(PlainResource().labeling().to_list(), [
+        self.assertEqual(PlainResource().labeling(
+            likes={
+                "simple_id": "y"
+            },
+            values={}
+        ).to_list(), [
             {
                 "name": "simple_id",
                 "kind": "int",
@@ -328,6 +364,28 @@ class TestResource(TestRestful):
                 "labels": {
                     1: ["ya"]
                 },
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        self.assertEqual(PlainResource().labeling(
+            likes={
+                "simple_id": "n"
+            },
+            values={}
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [],
+                "labels": {},
                 "format": [None],
                 "overflow": False,
                 "required": True
@@ -464,7 +522,7 @@ class TestResource(TestRestful):
             }
         ], errors=[])
 
-        response = self.api.options(f"/plain")
+        response = self.api.options(f"/plain", json={"likes": {"simple_id": "y"}})
         self.assertStatusFields(response, 200, [
             {
                 "name": "simple_id",
@@ -473,6 +531,24 @@ class TestResource(TestRestful):
                 "labels": {
                     '1': ["ya"]
                 },
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ], errors=[])
+
+        response = self.api.options(f"/plain", json={"likes": {"simple_id": "n"}})
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [],
+                "labels": {},
                 "format": [None],
                 "overflow": False,
                 "required": True
