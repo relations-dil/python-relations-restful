@@ -364,6 +364,7 @@ class TestResource(TestRestful):
                 "labels": {
                     1: ["ya"]
                 },
+                "like": "y",
                 "style": [None],
                 "overflow": False,
                 "required": True
@@ -386,6 +387,7 @@ class TestResource(TestRestful):
                 "kind": "int",
                 "options": [],
                 "labels": {},
+                "like": "n",
                 "style": [None],
                 "overflow": False,
                 "required": True
@@ -531,6 +533,7 @@ class TestResource(TestRestful):
                 "labels": {
                     '1': ["ya"]
                 },
+                "like": "y",
                 "style": [None],
                 "overflow": False,
                 "required": True
@@ -549,6 +552,7 @@ class TestResource(TestRestful):
                 "kind": "int",
                 "options": [],
                 "labels": {},
+                "like": "n",
                 "style": [None],
                 "overflow": False,
                 "required": True

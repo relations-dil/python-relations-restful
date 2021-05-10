@@ -245,12 +245,14 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         for field in fields:
             relation = self.model._ancestor(field.name)
             if relation is not None:
-                parent = relation.Parent.many(**{"like": likes[name] for name in likes if name==field.name})
+                like = {"like": likes[name] for name in likes if name==field.name}
+                parent = relation.Parent.many(**like)
                 labels = parent.labels()
                 field.options = labels.ids
                 field.content["labels"] = labels.labels
                 field.content["style"] = labels.style
                 field.content["overflow"] = parent.overflow
+                field.content.update(like)
 
         return fields
 
