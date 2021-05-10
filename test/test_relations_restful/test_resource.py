@@ -19,11 +19,13 @@ class ResourceModel(relations.Model):
 class Simple(ResourceModel):
     id = int
     name = str
+    CHUNK = 2
 
 class Plain(ResourceModel):
     ID = None
     simple_id = int
     name = str
+
 
 relations.OneToMany(Simple, Plain)
 
@@ -399,6 +401,57 @@ class TestResource(TestRestful):
             }
         ])
 
+        Simple("sure").create()
+        Simple("whatevs").create()
+
+        self.assertEqual(PlainResource().labeling(
+            likes={},
+            values={}
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [2, 3],
+                "labels": {
+                    2: ["sure"],
+                    3: ["whatevs"]
+                },
+                "style": [None],
+                "overflow": True,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        self.assertEqual(PlainResource().labeling(
+            likes={},
+            values={
+                "simple_id": 1
+            }
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    1: ["ya"]
+                },
+                "style": [None],
+                "overflow": True,
+                "required": True,
+                "value": 1
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
     def test_parenting(self):
 
         Simple("ya").create().plain.add("sure").create()
@@ -624,12 +677,12 @@ class TestResource(TestRestful):
 
         simples = Simple.bulk()
 
-        for name in range(200):
+        for name in range(3):
             simples.add(name)
 
         simples.create()
 
-        self.assertEqual(len(self.api.get("/simple").json["simples"]), 100)
+        self.assertEqual(len(self.api.get("/simple").json["simples"]), 2)
 
     def test_patch(self):
 
