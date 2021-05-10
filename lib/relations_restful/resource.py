@@ -245,7 +245,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         for field in fields:
             relation = self.model._ancestor(field.name)
             if relation is not None:
-                like = {"like": likes[name] for name in likes if name==field.name}
+                like = {"like": likes[name] for name in likes if name == field.name}
                 parent = relation.Parent.many(**like)
                 labels = parent.labels()
                 field.options = labels.ids
