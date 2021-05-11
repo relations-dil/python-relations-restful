@@ -144,7 +144,7 @@ class TestResourceIdentity(TestRestful):
         self.assertEqual(resource.SINGULAR, "init")
         self.assertEqual(resource.PLURAL, "inits")
         self.assertEqual(resource.FIELDS, [])
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -181,7 +181,7 @@ class TestResourceIdentity(TestRestful):
         resource = InitResource.thy()
         self.assertEqual(resource.SINGULAR, "inity")
         self.assertEqual(resource.PLURAL, "initys")
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -217,7 +217,7 @@ class TestResourceIdentity(TestRestful):
         resource = InitResource.thy()
         self.assertEqual(resource.SINGULAR, "inity")
         self.assertEqual(resource.PLURAL, "inities")
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -282,7 +282,7 @@ class TestResource(TestRestful):
         self.assertEqual(resource.SINGULAR, "init")
         self.assertEqual(resource.PLURAL, "inits")
         self.assertEqual(resource.FIELDS, [])
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -305,9 +305,9 @@ class TestResource(TestRestful):
             }
         ])
 
-    def test_labeling(self):
+    def test_fields(self):
 
-        self.assertEqual(SimpleResource().labeling(
+        self.assertEqual(SimpleResource().fields(
             likes={},
             values={
                 "name": "ya"
@@ -330,7 +330,7 @@ class TestResource(TestRestful):
             }
         ])
 
-        self.assertEqual(SimpleResource().labeling(
+        self.assertEqual(SimpleResource().fields(
             likes={},
             values={},
             originals={
@@ -352,7 +352,7 @@ class TestResource(TestRestful):
 
         Simple("ya").create()
 
-        self.assertEqual(PlainResource().labeling(
+        self.assertEqual(PlainResource().fields(
             likes={
                 "simple_id": "y"
             },
@@ -377,7 +377,7 @@ class TestResource(TestRestful):
             }
         ])
 
-        self.assertEqual(PlainResource().labeling(
+        self.assertEqual(PlainResource().fields(
             likes={
                 "simple_id": "n"
             },
@@ -406,7 +406,7 @@ class TestResource(TestRestful):
         Simple("sure").create()
         Simple("whatevs").create()
 
-        self.assertEqual(PlainResource().labeling(
+        self.assertEqual(PlainResource().fields(
             likes={},
             values={}
         ).to_list(), [
@@ -429,7 +429,7 @@ class TestResource(TestRestful):
             }
         ])
 
-        self.assertEqual(PlainResource().labeling(
+        self.assertEqual(PlainResource().fields(
             likes={},
             values={},
             originals={
@@ -455,7 +455,7 @@ class TestResource(TestRestful):
             }
         ])
 
-        self.assertEqual(PlainResource().labeling(
+        self.assertEqual(PlainResource().fields(
             likes={},
             values={
                 "simple_id": 1
@@ -480,18 +480,57 @@ class TestResource(TestRestful):
             }
         ])
 
-    def test_parenting(self):
+    def test_formats(self):
 
         Simple("ya").create().plain.add("sure").create()
 
         Simple("whatevs").create()
 
-        self.assertEqual(SimpleResource.parenting(Simple.many()), {})
+        self.assertEqual(SimpleResource().formats(Simple.many()), {})
 
-        self.assertEqual(PlainResource.parenting(Plain.many()), {
+        self.assertEqual(PlainResource().formats(Plain.many()), {
             "simple_id": {
                 "labels": {1: ["ya"]},
                 "format": [None]
+            }
+        })
+
+        self.assertEqual(PlainResource().formats(Plain.many()), {
+            "simple_id": {
+                "labels": {1: ["ya"]},
+                "format": [None]
+            }
+        })
+
+        class Advanced(ResourceModel):
+            id = int
+            name = str
+            status = ["good", "bad"]
+            created = int, {"format": "datetime"}
+
+        class AdvancedResource(relations_restful.Resource):
+
+            MODEL = Advanced
+
+            FIELDS = [
+                {
+                    "name": "status",
+                    "labels": {
+                        "good": "Good",
+                        "bad": "Bad"
+                    }
+                }
+            ]
+
+        self.assertEqual(AdvancedResource().formats(Advanced.many()), {
+            "status": {
+                "labels": {
+                    "good": "Good",
+                    "bad": "Bad"
+                },
+            },
+            "created": {
+                "format": "datetime"
             }
         })
 
@@ -663,11 +702,11 @@ class TestResource(TestRestful):
 
         response = self.api.get(f"/simple")
         self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
-        self.assertStatusValue(response, 200, "parents", {})
+        self.assertStatusValue(response, 200, "formats", {})
 
         response = self.api.get(f"/plain")
         self.assertStatusModel(response, 200, "plains", [{"simple_id": simple.id, "name": "whatevs"}])
-        self.assertStatusValue(response, 200, "parents", {
+        self.assertStatusValue(response, 200, "formats", {
             "simple_id": {
                 "labels": {'1': ["ya"]},
                 "format": [None]
@@ -699,7 +738,7 @@ class TestResource(TestRestful):
         response = self.api.get("/simple?limit__per_page=1&limit__page=3")
         self.assertStatusModels(response, 200, "simples", [{"name": "ya"}])
         self.assertStatusValue(response, 200, "overflow", True)
-        self.assertStatusValue(response, 200, "parents", {})
+        self.assertStatusValue(response, 200, "formats", {})
 
         simples = Simple.bulk()
 

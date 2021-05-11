@@ -60,9 +60,9 @@ def attach(restful, module, models):
         thy = resource.thy()
 
         Model.MODELS.append({
-            "id": thy.model._id,
-            "label": thy.model._label,
-            "title": thy.model.TITLE,
+            "id": thy._model._id,
+            "label": thy._model._label,
+            "title": thy._model.TITLE,
             "singular": thy.SINGULAR,
             "plural": thy.PLURAL,
             "list": thy.LIST
