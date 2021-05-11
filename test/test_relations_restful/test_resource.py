@@ -346,7 +346,6 @@ class TestResource(TestRestful):
                 "name": "name",
                 "kind": "str",
                 "required": True,
-                "value": "sure",
                 "original": "sure"
             }
         ])
@@ -447,8 +446,7 @@ class TestResource(TestRestful):
                 "style": [None],
                 "overflow": True,
                 "required": True,
-                "original": 1,
-                "value": 1
+                "original": 1
             },
             {
                 "name": "name",
@@ -578,15 +576,13 @@ class TestResource(TestRestful):
                 "name": "id",
                 "kind": "int",
                 "readonly": True,
-                "original": id,
-                "value": id
+                "original": id
             },
             {
                 "name": "name",
                 "kind": "str",
                 "required": True,
-                "original": "ya",
-                "value": "ya"
+                "original": "ya"
             }
         ], errors=[])
 

@@ -240,7 +240,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         Apply options and labels to fields
         """
 
-        fields = opengui.Fields(values=values or originals, originals=originals, fields=self.fields)
+        fields = opengui.Fields(values=values, originals=originals, fields=self.fields)
 
         for field in fields:
             relation = self.model._ancestor(field.name)
