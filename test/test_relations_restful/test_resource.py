@@ -7,6 +7,8 @@ import flask
 import flask_restful
 import werkzeug.exceptions
 
+import opengui
+
 import relations
 import relations_restful
 
@@ -17,11 +19,13 @@ class ResourceModel(relations.Model):
 class Simple(ResourceModel):
     id = int
     name = str
+    CHUNK = 2
 
 class Plain(ResourceModel):
     ID = None
     simple_id = int
     name = str
+
 
 relations.OneToMany(Simple, Plain)
 
@@ -140,7 +144,7 @@ class TestResourceIdentity(TestRestful):
         self.assertEqual(resource.SINGULAR, "init")
         self.assertEqual(resource.PLURAL, "inits")
         self.assertEqual(resource.FIELDS, [])
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -177,7 +181,7 @@ class TestResourceIdentity(TestRestful):
         resource = InitResource.thy()
         self.assertEqual(resource.SINGULAR, "inity")
         self.assertEqual(resource.PLURAL, "initys")
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -213,7 +217,7 @@ class TestResourceIdentity(TestRestful):
         resource = InitResource.thy()
         self.assertEqual(resource.SINGULAR, "inity")
         self.assertEqual(resource.PLURAL, "inities")
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -223,6 +227,7 @@ class TestResourceIdentity(TestRestful):
                 "name": "name",
                 "kind": "str",
                 "validation": "gone",
+                "required": True
             },
             {
                 "name": "status",
@@ -277,7 +282,7 @@ class TestResource(TestRestful):
         self.assertEqual(resource.SINGULAR, "init")
         self.assertEqual(resource.PLURAL, "inits")
         self.assertEqual(resource.FIELDS, [])
-        self.assertEqual(resource.fields, [
+        self.assertEqual(resource._fields, [
             {
                 "name": "id",
                 "kind": "int",
@@ -299,6 +304,235 @@ class TestResource(TestRestful):
                 "default": {}
             }
         ])
+
+    def test_fields(self):
+
+        self.assertEqual(SimpleResource().fields(
+            likes={},
+            values={
+                "name": "ya"
+            },
+            originals={
+                "name": "sure"
+            }
+        ).to_list(), [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True,
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True,
+                "value": "ya",
+                "original": "sure"
+            }
+        ])
+
+        self.assertEqual(SimpleResource().fields(
+            likes={},
+            values={},
+            originals={
+                "name": "sure"
+            }
+        ).to_list(), [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True,
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True,
+                "original": "sure"
+            }
+        ])
+
+        Simple("ya").create()
+
+        self.assertEqual(PlainResource().fields(
+            likes={
+                "simple_id": "y"
+            },
+            values={}
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    1: ["ya"]
+                },
+                "like": "y",
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        self.assertEqual(PlainResource().fields(
+            likes={
+                "simple_id": "n"
+            },
+            values={
+                "simple_id": 1
+            }
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [],
+                "labels": {},
+                "like": "n",
+                "format": [None],
+                "overflow": False,
+                "required": True,
+                "value": 1
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        Simple("sure").create()
+        Simple("whatevs").create()
+
+        self.assertEqual(PlainResource().fields(
+            likes={},
+            values={}
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [2, 3],
+                "labels": {
+                    2: ["sure"],
+                    3: ["whatevs"]
+                },
+                "format": [None],
+                "overflow": True,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        self.assertEqual(PlainResource().fields(
+            likes={},
+            values={},
+            originals={
+                "simple_id": 1
+            }
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    1: ["ya"]
+                },
+                "format": [None],
+                "overflow": True,
+                "required": True,
+                "original": 1
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+        self.assertEqual(PlainResource().fields(
+            likes={},
+            values={
+                "simple_id": 1
+            }
+        ).to_list(), [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    1: ["ya"]
+                },
+                "format": [None],
+                "overflow": True,
+                "required": True,
+                "value": 1
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ])
+
+    def test_formats(self):
+
+        Simple("ya").create().plain.add("sure").create()
+
+        Simple("whatevs").create()
+
+        self.assertEqual(SimpleResource().formats(Simple.many()), {})
+
+        self.assertEqual(PlainResource().formats(Plain.many()), {
+            "simple_id": {
+                "labels": {1: ["ya"]},
+                "format": [None]
+            }
+        })
+
+        self.assertEqual(PlainResource().formats(Plain.many()), {
+            "simple_id": {
+                "labels": {1: ["ya"]},
+                "format": [None]
+            }
+        })
+
+        class Advanced(ResourceModel):
+            id = int
+            name = str
+            status = ["good", "bad"]
+            created = int, {"format": "datetime"}
+
+        class AdvancedResource(relations_restful.Resource):
+
+            MODEL = Advanced
+
+            FIELDS = [
+                {
+                    "name": "status",
+                    "labels": {
+                        "good": "Good",
+                        "bad": "Bad"
+                    }
+                }
+            ]
+
+        self.assertEqual(AdvancedResource().formats(Advanced.many()), {
+            "status": {
+                "labels": {
+                    "good": "Good",
+                    "bad": "Bad"
+                },
+            },
+            "created": {
+                "format": "datetime"
+            }
+        })
 
     def test_criteria(self):
 
@@ -381,15 +615,13 @@ class TestResource(TestRestful):
                 "name": "id",
                 "kind": "int",
                 "readonly": True,
-                "original": id,
-                "value": id
+                "original": id
             },
             {
                 "name": "name",
                 "kind": "str",
                 "required": True,
-                "original": "ya",
-                "value": "ya"
+                "original": "ya"
             }
         ], errors=[])
 
@@ -410,6 +642,46 @@ class TestResource(TestRestful):
             }
         ], errors=[])
 
+        response = self.api.options(f"/plain", json={"likes": {"simple_id": "y"}})
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [1],
+                "labels": {
+                    '1': ["ya"]
+                },
+                "like": "y",
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ], errors=[])
+
+        response = self.api.options(f"/plain", json={"likes": {"simple_id": "n"}})
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "simple_id",
+                "kind": "int",
+                "options": [],
+                "labels": {},
+                "like": "n",
+                "format": [None],
+                "overflow": False,
+                "required": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            }
+        ], errors=[])
+
     def test_post(self):
 
         response = self.api.post("/simple")
@@ -426,6 +698,21 @@ class TestResource(TestRestful):
     def test_get(self):
 
         simple = Simple("ya").create()
+        plain = simple.plain.add("whatevs").create()
+
+        response = self.api.get(f"/simple")
+        self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
+        self.assertStatusValue(response, 200, "formats", {})
+
+        response = self.api.get(f"/plain")
+        self.assertStatusModel(response, 200, "plains", [{"simple_id": simple.id, "name": "whatevs"}])
+        self.assertStatusValue(response, 200, "formats", {
+            "simple_id": {
+                "labels": {'1': ["ya"]},
+                "format": [None]
+            }
+        })
+
         response = self.api.get(f"/simple/{simple.id}")
         self.assertStatusModel(response, 200, "simple", {"id": simple.id, "name": "ya"})
 
@@ -451,15 +738,16 @@ class TestResource(TestRestful):
         response = self.api.get("/simple?limit__per_page=1&limit__page=3")
         self.assertStatusModels(response, 200, "simples", [{"name": "ya"}])
         self.assertStatusValue(response, 200, "overflow", True)
+        self.assertStatusValue(response, 200, "formats", {})
 
         simples = Simple.bulk()
 
-        for name in range(200):
+        for name in range(3):
             simples.add(name)
 
         simples.create()
 
-        self.assertEqual(len(self.api.get("/simple").json["simples"]), 100)
+        self.assertEqual(len(self.api.get("/simple").json["simples"]), 2)
 
     def test_patch(self):
 

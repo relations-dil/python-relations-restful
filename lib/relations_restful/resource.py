@@ -82,8 +82,8 @@ class ResourceIdentity:
     FIELDS = None
     LIST = None
 
-    model = None
-    fields = None
+    _model = None
+    _fields = None
 
     @classmethod
     def thy(cls, self=None): # pylint: disable=too-many-branches
@@ -97,27 +97,27 @@ class ResourceIdentity:
             self = ResourceIdentity()
             self.__dict__.update(cls.__dict__)
 
-        self.model = self.MODEL.thy()
+        self._model = self.MODEL.thy()
 
         if self.SINGULAR is None:
-            if hasattr(self.model, "SINGULAR") and self.model.SINGULAR is not None:
-                self.SINGULAR = self.model.SINGULAR
+            if hasattr(self._model, "SINGULAR") and self._model.SINGULAR is not None:
+                self.SINGULAR = self._model.SINGULAR
             else:
-                self.SINGULAR = self.model.NAME
+                self.SINGULAR = self._model.NAME
 
         if self.PLURAL is None:
-            if hasattr(self.model, "PLURAL") and self.model.PLURAL is not None:
-                self.PLURAL = self.model.PLURAL
+            if hasattr(self._model, "PLURAL") and self._model.PLURAL is not None:
+                self.PLURAL = self._model.PLURAL
             else:
                 self.PLURAL = f"{self.SINGULAR}s"
 
         if self.FIELDS is None:
             self.FIELDS = []
 
-        self.fields = []
+        self._fields = []
         fields = opengui.Fields(fields=self.FIELDS)
 
-        for model_field in self.model._fields._order:
+        for model_field in self._model._fields._order:
 
             form_field = {
                 "name": model_field.name,
@@ -130,23 +130,23 @@ class ResourceIdentity:
 
             if model_field.default is not None:
                 form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
-            elif not model_field.none:
+            elif not model_field.none or model_field.name in self._model._label:
                 form_field["required"] = True
 
             if model_field.name in fields.names:
                 form_field.update(fields[model_field.name].to_dict())
 
-            self.fields.append(form_field)
+            self._fields.append(form_field)
 
         if self.LIST is None:
-            self.LIST = list(self.model._label)
-            if self.model._id and self.model._id not in self.LIST:
-                self.LIST.insert(0, self.model._id)
+            self.LIST = list(self._model._label)
+            if self._model._id and self._model._id not in self.LIST:
+                self.LIST.insert(0, self._model._id)
 
         # Make sure all the list checks out
 
         for field in self.LIST:
-            if field not in self.model._fields:
+            if field not in self._model._fields:
                 raise ResourceError(self, f"cannot find field {field} from list")
 
         return self
@@ -158,7 +158,7 @@ class ResourceIdentity:
 
         endpoints = [f"/{self.SINGULAR}"]
 
-        if self.model.ID is not None:
+        if self._model.ID is not None:
             endpoints.append(f"/{self.SINGULAR}/<id>")
 
         return endpoints
@@ -235,6 +235,62 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         return limit
 
+    def fields(self, likes, values, originals=None):
+        """
+        Apply options and labels to fields
+        """
+
+        fields = opengui.Fields(values=values, originals=originals, fields=self._fields)
+
+        for field in fields:
+            relation = self._model._ancestor(field.name)
+            if relation is not None:
+                like = {"like": likes[name] for name in likes if name == field.name}
+                parent = relation.Parent.many(**like).limit()
+                labels = parent.labels()
+
+                field.content["format"] = labels.format
+                field.content["overflow"] = parent.overflow
+
+                value = field.value if field.value is not None else field.original
+
+                if (not like and value is not None and value not in labels):
+                    labels = relation.Parent.one(**{relation.parent_field: value}).labels()
+                    field.content["overflow"] = True
+
+                field.options = labels.ids
+                field.content["labels"] = labels.labels
+
+                field.content.update(like)
+
+        return fields
+
+    def formats(self, model):
+        """
+        Generate all the formats including parent lookups
+        """
+
+        formats = {}
+
+        fields = opengui.Fields(fields=self._fields)
+
+        for field in model._fields._order:
+            relation = model._ancestor(field.name)
+            if relation is not None:
+                labels = relation.Parent.many(**{f"{relation.parent_field}__in": model[field.name]}).labels()
+                formats[field.name] = {
+                    "labels": labels.labels,
+                    "format": labels.format
+                }
+            elif field.format is not None or "labels" in fields[field.name].content:
+                formats[field.name] = {}
+                if field.format is not None:
+                    formats[field.name]["format"] = field.format
+                if  "labels" in fields[field.name].content:
+                    formats[field.name]["labels"] = fields[field.name].content["labels"]
+
+        return formats
+
     @exceptions
     def options(self, id=None):
         """
@@ -242,14 +298,15 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         """
 
         values = (flask.request.json or {}).get(self.SINGULAR)
+        likes = (flask.request.json or {}).get("likes", {})
 
         if id is None:
 
-            return opengui.Fields(values=values, fields=self.fields).to_dict(), 200
+            return self.fields(likes, values).to_dict(), 200
 
-        originals = dict(self.MODEL.one(**{self.model._id: id}))
+        originals = dict(self.MODEL.one(**{self._model._id: id}))
 
-        return opengui.Fields(values=values or originals, originals=originals, fields=self.fields).to_dict(), 200
+        return self.fields(likes, values, originals).to_dict(), 200
 
     @exceptions
     def post(self):
@@ -274,11 +331,12 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         """
 
         if id is not None:
-            return {self.SINGULAR: dict(self.MODEL.one(**{self.model._id: id}))}
+            model = self.MODEL.one(**{self._model._id: id})
+            return {self.SINGULAR: dict(model), "formats": self.formats(model)}
 
         models = self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())
 
-        return {self.PLURAL: [dict(model) for model in models], "overflow": models.overflow}, 200
+        return {self.PLURAL: [dict(model) for model in models], "overflow": models.overflow, "formats": self.formats(models)}, 200
 
     @exceptions
     def patch(self, id=None):
@@ -291,7 +349,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if id is not None:
 
-            model = self.MODEL.one(**{self.model._id: id}).set(**flask.request.json[self.SINGULAR])
+            model = self.MODEL.one(**{self._model._id: id}).set(**flask.request.json[self.SINGULAR])
 
         elif self.SINGULAR in flask.request.json:
 
@@ -311,7 +369,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if id is not None:
 
-            model = self.MODEL.one(**{self.model._id: id})
+            model = self.MODEL.one(**{self._model._id: id})
 
         else:
 

@@ -1,7 +1,7 @@
 ACCOUNT=gaf3
 IMAGE=relations-restful
 INSTALL=python:3.8.5-alpine3.12
-VERSION?=0.4.2
+VERSION?=0.4.3
 DEBUG_PORT=5678
 TTY=$(shell if tty -s; then echo "-it"; fi)
 VOLUMES=-v ${PWD}/lib:/opt/service/lib \
@@ -15,7 +15,7 @@ ENVIRONMENT=-e PYTHONDONTWRITEBYTECODE=1 \
 .PHONY: build shell debug test lint verify tag untag
 
 build:
-	docker build . -t $(ACCOUNT)/$(IMAGE):$(VERSION)
+	docker build --no-cache . -t $(ACCOUNT)/$(IMAGE):$(VERSION)
 
 shell:
 	docker run $(TTY) $(VOLUMES) $(ENVIRONMENT) -p 127.0.0.1:$(DEBUG_PORT):5678 $(ACCOUNT)/$(IMAGE):$(VERSION) sh
