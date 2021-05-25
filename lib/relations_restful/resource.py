@@ -139,9 +139,7 @@ class ResourceIdentity:
             self._fields.append(form_field)
 
         if self.LIST is None:
-            self.LIST = list(self._model._label)
-            if self._model._id and self._model._id not in self.LIST:
-                self.LIST.insert(0, self._model._id)
+            self.LIST = list(self._model._list)
 
         # Make sure all the list checks out
 
