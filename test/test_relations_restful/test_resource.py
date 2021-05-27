@@ -689,16 +689,20 @@ class TestResource(TestRestful):
 
         response = self.api.post("/simple", json={"simple": {"name": "ya"}})
         self.assertStatusModel(response, 201, "simple", {"name": "ya"})
-        self.assertEqual(Simple.one(id=response.json["simple"]["id"]).name, "ya")
+        simple = Simple.one(id=response.json["simple"]["id"])
+        self.assertEqual(simple.name, "ya")
 
         response = self.api.post("/plain", json={"plains": [{"name": "sure"}]})
         self.assertStatusModel(response, 201, "plains", [{"name": "sure"}])
         self.assertEqual(Plain.one().name, "sure")
 
+        response = self.api.post("/simple", json={"filter": {"name": "ya"}})
+        self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
+
     def test_get(self):
 
         simple = Simple("ya").create()
-        plain = simple.plain.add("whatevs").create()
+        simple.plain.add("whatevs").create()
 
         response = self.api.get(f"/simple")
         self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])

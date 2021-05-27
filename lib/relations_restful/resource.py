@@ -312,6 +312,10 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         Creates one or more models
         """
 
+        if "filter" in (flask.request.json or {}):
+
+            return self.get()
+
         if self.SINGULAR in (flask.request.json or {}):
 
             return {self.SINGULAR: dict(self.MODEL(**flask.request.json[self.SINGULAR]).create())}, 201
