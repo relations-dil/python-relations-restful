@@ -8,6 +8,7 @@ import flask_restful
 import werkzeug.exceptions
 
 import opengui
+import ipaddress
 
 import relations
 import relations_restful
@@ -26,15 +27,41 @@ class Plain(ResourceModel):
     simple_id = int
     name = str
 
-
 relations.OneToMany(Simple, Plain)
+
+class Meta(ResourceModel):
+    id = int
+    name = str
+    flag = bool
+    spend = float
+    stuff = list
+    things = dict
+
+def subnet_attr(values, value):
+
+    values["address"] = str(value)
+    min_ip = value[0]
+    max_ip = value[-1]
+    values["min_address"] = str(min_ip)
+    values["min_value"] = int(min_ip)
+    values["max_address"] = str(max_ip)
+    values["max_value"] = int(max_ip)
+
+class Net(ResourceModel):
+
+    id = int
+    name = str
+    ip = ipaddress.IPv4Address, {"attr": {"compressed": "address", "__int__": "value"}, "init": "address", "label": "address"}
+    subnet = ipaddress.IPv4Network, {"attr": subnet_attr, "init": "address", "label": "address"}
+
+    LABEL = ["ip"]
+    UNIQUE = False
 
 class SimpleResource(relations_restful.Resource):
     MODEL = Simple
 
 class PlainResource(relations_restful.Resource):
     MODEL = Plain
-
 
 class TestRestful(relations_restful.unittest.TestCase):
 
@@ -530,7 +557,44 @@ class TestResource(TestRestful):
                 },
             },
             "created": {
-                "format": "datetime"
+                "format": ["datetime"]
+            }
+        })
+
+    def test_export(self):
+
+        self.assertEqual(relations_restful.Resource.export(Meta(
+            "dive",
+            flag=True,
+            spend=3.50,
+            stuff=[1, 2, 3],
+            things={"a": {"b": [1], "c": "sure"}, "4": 5}
+        ).create()), {
+            "id": 1,
+            "name": "dive",
+            "flag": True,
+            "spend": 3.50,
+            "stuff": [1, 2, 3],
+            "things": {"a": {"b": [1], "c": "sure"}, "4": 5}
+        })
+
+        self.assertEqual(relations_restful.Resource.export(Net(
+            "crawl",
+            ip="1.2.3.4",
+            subnet="1.2.3.0/24"
+        ).create()), {
+            "id": 1,
+            "name": "crawl",
+            "ip": {
+                "address": "1.2.3.4",
+                "value": 16909060
+            },
+            "subnet": {
+                "address": "1.2.3.0/24",
+                "min_address": "1.2.3.0",
+                "min_value": 16909056,
+                "max_address": "1.2.3.255",
+                "max_value": 16909311
             }
         })
 
