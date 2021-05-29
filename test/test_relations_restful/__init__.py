@@ -52,7 +52,7 @@ class TestRestful(relations_restful.unittest.TestCase):
 
     def test_attach(self):
 
-        source = relations.unittest.MockSource("TestRestful")
+        relations.unittest.MockSource("TestRestful")
 
         app = flask.Flask("restful-api")
         restful = flask_restful.Api(app)

@@ -289,6 +289,24 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         return formats
 
+    @staticmethod
+    def export(model):
+        """
+        Converts all to json encodeable
+        """
+
+        exported = {}
+
+        model._ensure()
+
+        for field in model:
+            if model._record._names[field].kind in [bool, int, float, str, list, dict]:
+                exported[field] = model[field]
+            else:
+                exported[field] = model._record._names[field].export()
+
+        return exported
+
     @exceptions
     def options(self, id=None):
         """
@@ -318,11 +336,11 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if self.SINGULAR in (flask.request.json or {}):
 
-            return {self.SINGULAR: dict(self.MODEL(**flask.request.json[self.SINGULAR]).create())}, 201
+            return {self.SINGULAR: self.export(self.MODEL(**flask.request.json[self.SINGULAR]).create())}, 201
 
         if self.PLURAL in (flask.request.json or {}):
 
-            return {self.PLURAL: [dict(model) for model in self.MODEL(flask.request.json[self.PLURAL]).create()]}, 201
+            return {self.PLURAL: [self.export(model) for model in self.MODEL(flask.request.json[self.PLURAL]).create()]}, 201
 
         raise werkzeug.exceptions.BadRequest(f"either {self.SINGULAR} or {self.PLURAL} required")
 
@@ -334,11 +352,11 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if id is not None:
             model = self.MODEL.one(**{self._model._id: id})
-            return {self.SINGULAR: dict(model), "formats": self.formats(model)}
+            return {self.SINGULAR: self.export(model), "formats": self.formats(model)}
 
         models = self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())
 
-        return {self.PLURAL: [dict(model) for model in models], "overflow": models.overflow, "formats": self.formats(models)}, 200
+        return {self.PLURAL: [self.export(model) for model in models], "overflow": models.overflow, "formats": self.formats(models)}, 200
 
     @exceptions
     def patch(self, id=None):

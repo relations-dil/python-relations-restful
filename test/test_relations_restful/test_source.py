@@ -5,7 +5,8 @@ import relations_restful.unittest
 
 import flask
 import flask_restful
-import werkzeug.exceptions
+
+import ipaddress
 
 import relations
 import relations_restful
@@ -24,6 +25,34 @@ class Plain(SourceModel):
     name = str
 
 relations.OneToMany(Simple, Plain)
+
+class Meta(SourceModel):
+    id = int
+    name = str
+    flag = bool
+    spend = float
+    stuff = list
+    things = dict
+
+def subnet_attr(values, value):
+
+    values["address"] = str(value)
+    min_ip = value[0]
+    max_ip = value[-1]
+    values["min_address"] = str(min_ip)
+    values["min_value"] = int(min_ip)
+    values["max_address"] = str(max_ip)
+    values["max_value"] = int(max_ip)
+
+class Net(SourceModel):
+
+    id = int
+    name = str
+    ip = ipaddress.IPv4Address, {"attr": {"compressed": "address", "__int__": "value"}, "init": "address", "label": "address"}
+    subnet = ipaddress.IPv4Network, {"attr": subnet_attr, "init": "address", "label": "address"}
+
+    LABEL = ["ip"]
+    UNIQUE = False
 
 class Unit(SourceModel):
     id = int
@@ -68,6 +97,40 @@ class TestSource(unittest.TestCase):
         class PlainResource(relations_restful.Resource):
             MODEL = Plain
 
+        class Meta(ResourceModel):
+            id = int
+            name = str
+            flag = bool
+            spend = float
+            stuff = list
+            things = dict
+
+        def subnet_attr(values, value):
+
+            values["address"] = str(value)
+            min_ip = value[0]
+            max_ip = value[-1]
+            values["min_address"] = str(min_ip)
+            values["min_value"] = int(min_ip)
+            values["max_address"] = str(max_ip)
+            values["max_value"] = int(max_ip)
+
+        class Net(ResourceModel):
+
+            id = int
+            name = str
+            ip = ipaddress.IPv4Address, {"attr": {"compressed": "address", "__int__": "value"}, "init": "address", "label": "address"}
+            subnet = ipaddress.IPv4Network, {"attr": subnet_attr, "init": "address", "label": "address"}
+
+            LABEL = ["ip"]
+            UNIQUE = False
+
+        class MetaResource(relations_restful.Resource):
+            MODEL = Meta
+
+        class NetResource(relations_restful.Resource):
+            MODEL = Net
+
         class Unit(ResourceModel):
             id = int
             name = str
@@ -102,6 +165,9 @@ class TestSource(unittest.TestCase):
         restful.add_resource(SimpleResource, '/simple', '/simple/<id>')
         restful.add_resource(PlainResource, '/plain')
 
+        restful.add_resource(MetaResource, '/meta', '/meta/<id>')
+        restful.add_resource(NetResource, '/net', '/net/<id>')
+
         restful.add_resource(UnitResource, '/unit', '/unit/<id>')
         restful.add_resource(TestResource, '/test', '/test/<id>')
         restful.add_resource(CaseResource, '/case', '/case/<id>')
@@ -109,6 +175,7 @@ class TestSource(unittest.TestCase):
         self.source = relations_restful.Source("TestRestfulSource", "", self.app.test_client())
 
         def result(model, key, response):
+
             return response.json[key]
 
         self.source.result = result
@@ -255,6 +322,65 @@ class TestSource(unittest.TestCase):
         self.assertEqual(Unit.many().sort("-name").limit(0).name, [])
         self.assertEqual(Unit.many(name="people").limit(1).name, ["people"])
 
+        Meta("dive", stuff=[1, 2, 3], things={"a": {"b": [1], "c": "sure"}, "4": 5}).create()
+
+        model = Meta.many(stuff__1=2)
+        self.assertEqual(model[0].name, "dive")
+
+        model = Meta.many(things__a__b__0=1)
+        self.assertEqual(model[0].name, "dive")
+
+        model = Meta.many(things__a__c__like="su")
+        self.assertEqual(model[0].name, "dive")
+
+        model = Meta.many(things__a__d__null=True)
+        self.assertEqual(model[0].name, "dive")
+
+        model = Meta.many(things___4=5)
+        self.assertEqual(model[0].name, "dive")
+
+        model = Meta.many(things__a__b__0__gt=1)
+        self.assertEqual(len(model), 0)
+
+        model = Meta.many(things__a__c__notlike="su")
+        self.assertEqual(len(model), 0)
+
+        model = Meta.many(things__a__d__null=False)
+        self.assertEqual(len(model), 0)
+
+        model = Meta.many(things___4=6)
+        self.assertEqual(len(model), 0)
+
+        Net("crawl", ip="1.2.3.4", subnet="1.2.3.0/24").create()
+        Net("web").create()
+
+        model = Net.many(like='1.2.3.')
+        self.assertEqual(model[0].name, "crawl")
+
+        model = Net.many(ip__address__like='1.2.3.')
+        self.assertEqual(model[0].name, "crawl")
+
+        model = Net.many(ip__value__gt=int(ipaddress.IPv4Address('1.2.3.0')))
+        self.assertEqual(model[0].name, "crawl")
+
+        model = Net.many(subnet__address__like='1.2.3.')
+        self.assertEqual(model[0].name, "crawl")
+
+        model = Net.many(subnet__min_value=int(ipaddress.IPv4Address('1.2.3.0')))
+        self.assertEqual(model[0].name, "crawl")
+
+        model = Net.many(ip__address__notlike='1.2.3.')
+        self.assertEqual(len(model), 0)
+
+        model = Net.many(ip__value__lt=int(ipaddress.IPv4Address('1.2.3.0')))
+        self.assertEqual(len(model), 0)
+
+        model = Net.many(subnet__address__notlike='1.2.3.')
+        self.assertEqual(len(model), 0)
+
+        model = Net.many(subnet__max_value=int(ipaddress.IPv4Address('1.2.3.0')))
+        self.assertEqual(len(model), 0)
+
     def test_model_labels(self):
 
         Unit("people").create().test.add("stuff").add("things").create()
@@ -286,6 +412,13 @@ class TestSource(unittest.TestCase):
             1: ["people", "stuff"],
             2: ["people", "things"]
         })
+
+        Net("crawl", ip="1.2.3.4", subnet="1.2.3.0/24").create()
+
+        self.assertEqual(Net.many().labels().labels, {
+            1: ["1.2.3.4"]
+        })
+
 
     def test_field_update(self):
 
