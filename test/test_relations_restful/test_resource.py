@@ -36,6 +36,7 @@ class Meta(ResourceModel):
     spend = float
     stuff = list
     things = dict
+    pull = str, {"extract": "things__for__0___1"}
 
 def subnet_attr(values, value):
 
@@ -50,12 +51,20 @@ def subnet_attr(values, value):
 class Net(ResourceModel):
 
     id = int
-    name = str
-    ip = ipaddress.IPv4Address, {"attr": {"compressed": "address", "__int__": "value"}, "init": "address", "label": "address"}
-    subnet = ipaddress.IPv4Network, {"attr": subnet_attr, "init": "address", "label": "address"}
+    ip_address = str, {"extract": "ip__address"}
+    ip_value = int, {"extract": "ip__value"}
+    ip = ipaddress.IPv4Address, {
+        "attr": {"compressed": "address", "__int__": "value"},
+        "init": "address",
+        "label": "address"
+    }
+    subnet = ipaddress.IPv4Network, {
+        "attr": subnet_attr,
+        "init": "address",
+        "label": "address"
+    }
 
-    LABEL = ["ip"]
-    UNIQUE = False
+    INDEX = "ip_value"
 
 class SimpleResource(relations_restful.Resource):
     MODEL = Simple
@@ -563,28 +572,33 @@ class TestResource(TestRestful):
 
     def test_export(self):
 
-        self.assertEqual(relations_restful.Resource.export(Meta(
+        meta = Meta(
             "dive",
             flag=True,
             spend=3.50,
             stuff=[1, 2, 3],
-            things={"a": {"b": [1], "c": "sure"}, "4": 5}
-        ).create()), {
+            things={"for": [{"1": "yep"}]}
+        ).create()
+
+        self.assertEqual(relations_restful.Resource.export(Meta.one(meta.id)), {
             "id": 1,
             "name": "dive",
             "flag": True,
             "spend": 3.50,
             "stuff": [1, 2, 3],
-            "things": {"a": {"b": [1], "c": "sure"}, "4": 5}
+            "things": {"for": [{"1": "yep"}]},
+            "pull": "yep"
         })
 
-        self.assertEqual(relations_restful.Resource.export(Net(
-            "crawl",
-            ip="1.2.3.4",
+        net = Net(
+            "1.2.3.4",
             subnet="1.2.3.0/24"
-        ).create()), {
+        ).create()
+
+        self.assertEqual(relations_restful.Resource.export(Net.one(net.id)), {
             "id": 1,
-            "name": "crawl",
+            "ip_address": "1.2.3.4",
+            "ip_value": 16909060,
             "ip": {
                 "address": "1.2.3.4",
                 "value": 16909060
