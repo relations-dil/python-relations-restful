@@ -84,14 +84,19 @@ class Source(relations.Source):
             if model._id is not None and model._fields._names[model._id].readonly:
                 creating[model._id] = records[index][model._fields._names[model._id].store]
 
-            for parent_child in creating.CHILDREN:
-                if creating._children.get(parent_child):
-                    creating._children[parent_child].create()
+            if not model._bulk:
+
+                for parent_child in creating.CHILDREN:
+                    if creating._children.get(parent_child):
+                        creating._children[parent_child].create()
 
             creating._action = "update"
             creating._record._action = "update"
 
-        model._action = "update"
+        if model._bulk:
+            model._models = []
+        else:
+            model._action = "update"
 
         return model
 
