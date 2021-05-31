@@ -66,6 +66,19 @@ class Source(relations.Source):
         if model._id is not None and model._fields._names[model._id].readonly is None:
             model._fields._names[model._id].readonly = True
 
+    def field_create(self, field, values):
+        """
+        Updates values with the field's that changed
+        """
+
+        if not field.readonly:
+            if field.attr is not None:
+                value = field.export()
+            else:
+                value = field.value
+            values[field.name] = value
+            field.changed = False
+
     def model_create(self, model):
         """
         Executes the create
@@ -75,7 +88,9 @@ class Source(relations.Source):
         values = []
 
         for creating in models:
-            values.append(creating._record.write({}))
+            record = {}
+            self.record_create(creating._record, record)
+            values.append(record)
 
         records = self.result(model, model.PLURAL, self.session.post(f"{self.url}/{model.ENDPOINT}", json={model.PLURAL: values}))
 
@@ -178,7 +193,11 @@ class Source(relations.Source):
         """
 
         if not field.readonly and (changed is None or field.changed == changed):
-            values[field.name] = field.value
+            if field.attr is not None:
+                value = field.export()
+            else:
+                value = field.value
+            values[field.name] = value
             field.changed = False
 
     def model_update(self, model):
