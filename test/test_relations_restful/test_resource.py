@@ -37,6 +37,7 @@ class Meta(ResourceModel):
     stuff = list
     things = dict
     pull = str, {"extract": "things__for__0___1"}
+    push = str, {"inject": "stuff__-1__relations.io___1"}
 
 def subnet_attr(values, value):
 
@@ -576,8 +577,9 @@ class TestResource(TestRestful):
             "dive",
             flag=True,
             spend=3.50,
-            stuff=[1, 2, 3],
-            things={"for": [{"1": "yep"}]}
+            stuff=[1, 2, 3, None],
+            things={"for": [{"1": "yep"}]},
+            push="sure"
         ).create()
 
         self.assertEqual(relations_restful.Resource.export(Meta.one(meta.id)), {
@@ -585,9 +587,10 @@ class TestResource(TestRestful):
             "name": "dive",
             "flag": True,
             "spend": 3.50,
-            "stuff": [1, 2, 3],
+            "stuff": [1, 2, 3, {"relations.io": {"1": "sure"}}],
             "things": {"for": [{"1": "yep"}]},
-            "pull": "yep"
+            "pull": "yep",
+            "push": "sure"
         })
 
         net = Net(
