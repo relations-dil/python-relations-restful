@@ -124,13 +124,13 @@ class ResourceIdentity:
                 "kind": model_field.kind.__name__
             }
 
-            for attribute in ["readonly", "options", "validation"]:
+            for attribute in ["readonly", "options", "validation", "init", "extract", "inject"]:
                 if getattr(model_field, attribute):
                     form_field[attribute] = getattr(model_field, attribute)
 
             if model_field.default is not None:
                 form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
-            elif not model_field.none or model_field.name in self._model._label:
+            elif not model_field.readonly and (not model_field.none or model_field.name in self._model._label):
                 form_field["required"] = True
 
             if model_field.name in fields.names:
@@ -299,11 +299,11 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         model._ensure()
 
-        for field in model:
-            if model._record._names[field].kind in [bool, int, float, str, list, dict]:
-                exported[field] = model[field]
+        for field in model._record._order:
+            if field.kind in [bool, int, float, str, list, dict]:
+                exported[field.name] = field.value
             else:
-                exported[field] = model._record._names[field].export()
+                exported[field.name] = field.export()
 
         return exported
 
@@ -320,7 +320,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
             return self.fields(likes, values).to_dict(), 200
 
-        originals = dict(self.MODEL.one(**{self._model._id: id}))
+        originals = self.export(self.MODEL.one(**{self._model._id: id}))
 
         return self.fields(likes, values, originals).to_dict(), 200
 

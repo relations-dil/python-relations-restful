@@ -73,6 +73,12 @@ class SimpleResource(relations_restful.Resource):
 class PlainResource(relations_restful.Resource):
     MODEL = Plain
 
+class MetaResource(relations_restful.Resource):
+    MODEL = Meta
+
+class NetResource(relations_restful.Resource):
+    MODEL = Net
+
 class TestRestful(relations_restful.unittest.TestCase):
 
     def setUp(self):
@@ -82,8 +88,10 @@ class TestRestful(relations_restful.unittest.TestCase):
         self.app = flask.Flask("resource-api")
         restful = flask_restful.Api(self.app)
 
-        restful.add_resource(SimpleResource, '/simple', '/simple/<id>')
-        restful.add_resource(PlainResource, '/plain')
+        restful.add_resource(SimpleResource, *SimpleResource.thy().endpoints())
+        restful.add_resource(PlainResource, *PlainResource.thy().endpoints())
+        restful.add_resource(MetaResource, *MetaResource.thy().endpoints())
+        restful.add_resource(NetResource, *NetResource.thy().endpoints())
 
         self.api = self.app.test_client()
 
@@ -173,6 +181,13 @@ class TestResourceIdentity(TestRestful):
             name = str
             status = str,"good"
             meta = dict
+            pull = str, {"extract": "meta__for__0___1"}
+            push = str, {"inject": "meta__a__-1__relations.io___1"}
+            ip = ipaddress.IPv4Address, {
+                "attr": {"compressed": "address", "__int__": "value"},
+                "init": "address",
+                "label": "address"
+            }
 
         class InitResource(relations_restful.ResourceIdentity):
             MODEL = Init
@@ -201,6 +216,22 @@ class TestResourceIdentity(TestRestful):
                 "name": "meta",
                 "kind": "dict",
                 "default": {}
+            },
+            {
+                "name": "pull",
+                "kind": "str",
+                "readonly": True,
+                "extract": "meta__for__0___1"
+            },
+            {
+                "name": "push",
+                "kind": "str",
+                "inject": "meta__a__-1__relations.io___1"
+            },
+            {
+                "name": "ip",
+                "kind": "IPv4Address",
+                "init": {"address": "address"}
             }
         ])
         self.assertEqual(resource.LIST, ['id', 'name'])
@@ -239,6 +270,22 @@ class TestResourceIdentity(TestRestful):
                 "name": "meta",
                 "kind": "dict",
                 "default": {}
+            },
+            {
+                "name": "pull",
+                "kind": "str",
+                "readonly": True,
+                "extract": "meta__for__0___1"
+            },
+            {
+                "name": "push",
+                "kind": "str",
+                "inject": "meta__a__-1__relations.io___1"
+            },
+            {
+                "name": "ip",
+                "kind": "IPv4Address",
+                "init": {"address": "address"}
             }
         ])
         self.assertEqual(resource.LIST, ['id', 'name', 'status'])
@@ -275,6 +322,22 @@ class TestResourceIdentity(TestRestful):
                 "name": "meta",
                 "kind": "dict",
                 "default": {}
+            },
+            {
+                "name": "pull",
+                "kind": "str",
+                "readonly": True,
+                "extract": "meta__for__0___1"
+            },
+            {
+                "name": "push",
+                "kind": "str",
+                "inject": "meta__a__-1__relations.io___1"
+            },
+            {
+                "name": "ip",
+                "kind": "IPv4Address",
+                "init": {"address": "address"}
             }
         ])
 
@@ -760,6 +823,53 @@ class TestResource(TestRestful):
                 "name": "name",
                 "kind": "str",
                 "required": True
+            }
+        ], errors=[])
+
+        id = self.api.post("/net", json={"net": {"ip": "1.2.3.4", "subnet": "1.2.3.0/24"}}).json["net"]["id"]
+
+        response = self.api.options(f"/net/{id}")
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True,
+                "original": 1
+            },
+            {
+                "name": "ip_address",
+                "kind": "str",
+                "readonly": True,
+                "original": "1.2.3.4",
+                "extract": "ip__address"
+            },
+            {
+                "name": "ip_value",
+                "kind": "int",
+                "readonly": True,
+                "original": 16909060,
+                "extract": "ip__value"
+            },
+            {
+                "name": "ip",
+                "kind": "IPv4Address",
+                "original": {
+                    "address": "1.2.3.4",
+                    "value": 16909060
+                },
+                "init": {"address": "address"}
+            },
+            {
+                "name": "subnet",
+                "kind": "IPv4Network",
+                "original": {
+                    "address": "1.2.3.0/24",
+                    "min_address": "1.2.3.0",
+                    "min_value": 16909056,
+                    "max_address": "1.2.3.255",
+                    "max_value": 16909311
+                },
+                "init": {"address": "address"}
             }
         ], errors=[])
 
