@@ -189,7 +189,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
             criteria.update({
                 name: value
                 for name, value in flask.request.args.to_dict().items()
-                if not name.startswith("limit") and name != "sort"
+                if not name.startswith("limit") and name not in ["sort", "count"]
             })
 
         if flask.request.json is not None and "filter" in flask.request.json:
@@ -232,6 +232,25 @@ class Resource(flask_restful.Resource, ResourceIdentity):
             limit.update({name: int(value) for name, value in flask.request.json["limit"].items()})
 
         return limit
+
+    @staticmethod
+    def count():
+        """
+        Gets soirt from the flask request
+        """
+
+        count = False
+
+        if flask.request.args and 'count' in flask.request.args:
+            count = flask.request.args['count']
+
+        if flask.request.json is not None and "count" in flask.request.json:
+            count = flask.request.json['count']
+
+        if isinstance(count, (bool, int)):
+            return count
+
+        return count.lower() not in ["0", "no", "false"]
 
     def fields(self, likes, values, originals=None):
         """
@@ -355,6 +374,9 @@ class Resource(flask_restful.Resource, ResourceIdentity):
             return {self.SINGULAR: self.export(model), "formats": self.formats(model)}
 
         models = self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())
+
+        if self.count():
+            return {self.PLURAL: models.count(), "overflow": models.overflow}, 200
 
         return {self.PLURAL: [self.export(model) for model in models], "overflow": models.overflow, "formats": self.formats(models)}, 200
 

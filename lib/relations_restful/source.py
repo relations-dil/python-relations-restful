@@ -123,6 +123,23 @@ class Source(relations.Source):
         for operator, value in (field.criteria or {}).items():
             criteria[f"{field.name}__{operator}"] = value
 
+    def model_count(self, model):
+        """
+        Executes the retrieve
+        """
+
+        model._collate()
+
+        body = {"filter": {}}
+        self.record_retrieve(model._record, body["filter"])
+
+        body["count"] = True
+
+        if model._like:
+            body["filter"]["like"] = model._like
+
+        return self.result(model, model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json=body))
+
     def model_retrieve(self, model, verify=True):
         """
         Executes the retrieve

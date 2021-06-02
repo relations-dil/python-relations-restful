@@ -405,6 +405,89 @@ class TestResource(TestRestful):
             }
         ])
 
+    def test_criteria(self):
+
+        verify = True
+
+        @relations_restful.exceptions
+        def criteria():
+            return {"criteria": relations_restful.Resource.criteria(verify)}
+
+        self.app.add_url_rule('/criteria', 'criteria', criteria)
+
+        response = self.api.get("/criteria")
+        self.assertStatusValue(response, 400, "message", "to confirm all, send a blank filter {}")
+
+        verify = False
+        response = self.api.get("/criteria")
+        self.assertStatusValue(response, 200, "criteria", {})
+
+        response = self.api.get("/criteria?a=1&sort=a&limit=2")
+        self.assertStatusValue(response, 200, "criteria", {"a": "1"})
+
+        response = self.api.get("/criteria?a=1", json={"filter": {"a": 2}})
+        self.assertStatusValue(response, 200, "criteria", {"a": 2})
+
+    def test_sort(self):
+
+        @relations_restful.exceptions
+        def sort():
+            return {"sort": relations_restful.Resource.sort()}
+
+        self.app.add_url_rule('/sort', 'sort', sort)
+
+        response = self.api.get("/sort")
+        self.assertStatusValue(response, 200, "sort", [])
+
+        response = self.api.get("/sort?sort=a,-b")
+        self.assertStatusValue(response, 200, "sort", ["a", "-b"])
+
+        response = self.api.get("/sort?sort=-a", json={"sort": ["b", "+c"]})
+        self.assertStatusValue(response, 200, "sort", ["-a", "b", "+c"])
+
+    def test_limit(self):
+
+        @relations_restful.exceptions
+        def limit():
+            return {"limit": relations_restful.Resource.limit()}
+
+        self.app.add_url_rule('/limit', 'limit', limit)
+
+        response = self.api.get("/limit")
+        self.assertStatusValue(response, 200, "limit", {})
+
+        response = self.api.get("/limit?limit__per_page=1&limit__page=2")
+        self.assertStatusValue(response, 200, "limit", {"per_page": 1, "page": 2})
+
+        response = self.api.get("/limit?limit=1", json={"limit": {"per_page": "2", "page": 3}})
+        self.assertStatusValue(response, 200, "limit", {"limit": 1, "per_page": 2, "page": 3})
+
+    def test_count(self):
+
+        @relations_restful.exceptions
+        def count():
+            return {"count": relations_restful.Resource.count()}
+
+        self.app.add_url_rule('/count', 'count', count)
+
+        response = self.api.get("/count")
+        self.assertStatusValue(response, 200, "count", False)
+
+        response = self.api.get("/count?count=yes")
+        self.assertStatusValue(response, 200, "count", True)
+
+        response = self.api.get("/count", json={"count": False})
+        self.assertStatusValue(response, 200, "count", False)
+
+        response = self.api.get("/count", json={"count": "FALSE"})
+        self.assertStatusValue(response, 200, "count", False)
+
+        response = self.api.get("/count", json={"count": "0"})
+        self.assertStatusValue(response, 200, "count", False)
+
+        response = self.api.get("/count", json={"count": "no"})
+        self.assertStatusValue(response, 200, "count", False)
+
     def test_fields(self):
 
         self.assertEqual(SimpleResource().fields(
@@ -678,63 +761,6 @@ class TestResource(TestRestful):
             }
         })
 
-    def test_criteria(self):
-
-        verify = True
-
-        @relations_restful.exceptions
-        def criteria():
-            return {"criteria": relations_restful.Resource.criteria(verify)}
-
-        self.app.add_url_rule('/criteria', 'criteria', criteria)
-
-        response = self.api.get("/criteria")
-        self.assertStatusValue(response, 400, "message", "to confirm all, send a blank filter {}")
-
-        verify = False
-        response = self.api.get("/criteria")
-        self.assertStatusValue(response, 200, "criteria", {})
-
-        response = self.api.get("/criteria?a=1&sort=a&limit=2")
-        self.assertStatusValue(response, 200, "criteria", {"a": "1"})
-
-        response = self.api.get("/criteria?a=1", json={"filter": {"a": 2}})
-        self.assertStatusValue(response, 200, "criteria", {"a": 2})
-
-    def test_sort(self):
-
-        @relations_restful.exceptions
-        def sort():
-            return {"sort": relations_restful.Resource.sort()}
-
-        self.app.add_url_rule('/sort', 'sort', sort)
-
-        response = self.api.get("/sort")
-        self.assertStatusValue(response, 200, "sort", [])
-
-        response = self.api.get("/sort?sort=a,-b")
-        self.assertStatusValue(response, 200, "sort", ["a", "-b"])
-
-        response = self.api.get("/sort?sort=-a", json={"sort": ["b", "+c"]})
-        self.assertStatusValue(response, 200, "sort", ["-a", "b", "+c"])
-
-    def test_limit(self):
-
-        @relations_restful.exceptions
-        def limit():
-            return {"limit": relations_restful.Resource.limit()}
-
-        self.app.add_url_rule('/limit', 'limit', limit)
-
-        response = self.api.get("/limit")
-        self.assertStatusValue(response, 200, "limit", {})
-
-        response = self.api.get("/limit?limit__per_page=1&limit__page=2")
-        self.assertStatusValue(response, 200, "limit", {"per_page": 1, "page": 2})
-
-        response = self.api.get("/limit?limit=1", json={"limit": {"per_page": "2", "page": 3}})
-        self.assertStatusValue(response, 200, "limit", {"limit": 1, "per_page": 2, "page": 3})
-
     def test_options(self):
 
         response = self.api.options("/simple")
@@ -890,6 +916,9 @@ class TestResource(TestRestful):
         response = self.api.post("/simple", json={"filter": {"name": "ya"}})
         self.assertStatusModel(response, 200, "simples", [{"id": simple.id, "name": "ya"}])
 
+        response = self.api.post("/simple", json={"filter": {"name": "ya"}, "count": True})
+        self.assertStatusModel(response, 200, "simples", 1)
+
     def test_get(self):
 
         simple = Simple("ya").create()
@@ -942,7 +971,8 @@ class TestResource(TestRestful):
 
         simples.create()
 
-        self.assertEqual(len(self.api.get("/simple").json["simples"]), 2)
+        self.assertEqual(self.api.get("/simple?count=yes").json["simples"], 6)
+        self.assertEqual(self.api.get("/simple", json={"count": True}).json["simples"], 6)
 
     def test_patch(self):
 

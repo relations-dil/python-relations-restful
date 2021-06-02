@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 setup(
     name="relations-restful",
-    version="0.4.9",
+    version="0.4.10",
     package_dir = {'': 'lib'},
     py_modules = [
         'relations_restful',
