@@ -339,6 +339,16 @@ class TestSource(unittest.TestCase):
             }
         })
 
+    def test_model_count(self):
+
+        Unit([["stuff"], ["people"]]).create()
+
+        self.assertEqual(Unit.many().count(), 2)
+
+        self.assertEqual(Unit.many(name="people").count(), 1)
+
+        self.assertEqual(Unit.many(like="p").count(), 1)
+
     def test_model_retrieve(self):
 
         Unit([["people"], ["stuff"]]).create()
