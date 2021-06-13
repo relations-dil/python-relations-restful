@@ -1,4 +1,4 @@
-git+https://github.com/gaf3/python-relations.git@c3b0da5#egg=relations
+git+https://github.com/gaf3/python-relations.git@0.4.9#egg=relations
 git+https://github.com/gaf3/opengui.git@0.8.3#egg=opengui
 requests==2.25.1
 flask==2.0.1
