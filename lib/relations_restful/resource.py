@@ -308,24 +308,6 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         return formats
 
-    @staticmethod
-    def export(model):
-        """
-        Converts all to json encodeable
-        """
-
-        exported = {}
-
-        model._ensure()
-
-        for field in model._record._order:
-            if field.kind in [bool, int, float, str, list, dict]:
-                exported[field.name] = field.value
-            else:
-                exported[field.name] = field.export()
-
-        return exported
-
     @exceptions
     def options(self, id=None):
         """
@@ -339,7 +321,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
             return self.fields(likes, values).to_dict(), 200
 
-        originals = self.export(self.MODEL.one(**{self._model._id: id}))
+        originals = self.MODEL.one(**{self._model._id: id}).export()
 
         return self.fields(likes, values, originals).to_dict(), 200
 
@@ -355,11 +337,11 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if self.SINGULAR in (flask.request.json or {}):
 
-            return {self.SINGULAR: self.export(self.MODEL(**flask.request.json[self.SINGULAR]).create())}, 201
+            return {self.SINGULAR: self.MODEL(**flask.request.json[self.SINGULAR]).create().export()}, 201
 
         if self.PLURAL in (flask.request.json or {}):
 
-            return {self.PLURAL: [self.export(model) for model in self.MODEL(flask.request.json[self.PLURAL]).create()]}, 201
+            return {self.PLURAL: self.MODEL(flask.request.json[self.PLURAL]).create().export()}, 201
 
         raise werkzeug.exceptions.BadRequest(f"either {self.SINGULAR} or {self.PLURAL} required")
 
@@ -371,14 +353,14 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         if id is not None:
             model = self.MODEL.one(**{self._model._id: id})
-            return {self.SINGULAR: self.export(model), "formats": self.formats(model)}
+            return {self.SINGULAR: model.export(), "formats": self.formats(model)}
 
         models = self.MODEL.many(**self.criteria()).sort(*self.sort()).limit(**self.limit())
 
         if self.count():
             return {self.PLURAL: models.count(), "overflow": models.overflow}, 200
 
-        return {self.PLURAL: [self.export(model) for model in models], "overflow": models.overflow, "formats": self.formats(models)}, 200
+        return {self.PLURAL: models.export(), "overflow": models.overflow, "formats": self.formats(models)}, 200
 
     @exceptions
     def patch(self, id=None):
