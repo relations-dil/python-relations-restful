@@ -124,13 +124,16 @@ class ResourceIdentity:
                 "kind": model_field.kind.__name__
             }
 
-            for attribute in ["readonly", "options", "validation", "init", "extract", "inject"]:
+            for attribute in ["options", "validation", "init", "extract", "inject"]:
                 if getattr(model_field, attribute):
                     form_field[attribute] = getattr(model_field, attribute)
 
+            if model_field.auto:
+                form_field["readonly"] = True
+
             if model_field.default is not None:
                 form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
-            elif not model_field.readonly and (not model_field.none or model_field.name in self._model._label):
+            elif not model_field.auto and (not model_field.none or model_field.name in self._model._label):
                 form_field["required"] = True
 
             if model_field.name in fields.names:
