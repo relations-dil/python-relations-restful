@@ -257,7 +257,7 @@ class TestSource(unittest.TestCase):
         self.assertEqual(model.SINGULAR, "check")
         self.assertEqual(model.PLURAL, "checks")
         self.assertEqual(model.ENDPOINT, "check")
-        self.assertTrue(model._fields._names["id"].readonly)
+        self.assertTrue(model._fields._names["id"].auto)
 
         Check.SINGULAR = "people"
         Check.PLURAL = "stuff"
@@ -498,22 +498,48 @@ class TestSource(unittest.TestCase):
         field.value = 1
         self.source.field_update(field, values)
         self.assertEqual(values, {"id": 1})
-        self.assertFalse(field.changed)
 
         # not changed
 
         values = {}
-        self.source.field_update(field, values, changed=True)
+        self.source.field_update(field, values)
         self.assertEqual(values, {})
-        self.assertFalse(field.changed)
 
-        # readonly
+        # auto
 
-        field = relations.Field(int, name="id", readonly=True)
+        field = relations.Field(int, name="id", auto=True)
         self.source.field_init(field)
         values = {}
         field.value = 1
-        self.source.field_update( field, values)
+        self.source.field_update(field, values)
+        self.assertEqual(values, {})
+
+    def test_field_mass(self):
+
+        # Standard
+
+        field = relations.Field(int, name="id")
+        self.source.field_init(field)
+        values = {}
+        field.value = 1
+        self.source.field_update(field, values)
+        self.assertEqual(values, {"id": 1})
+
+        # not changed
+
+        field.changed = False
+        values = {}
+        self.source.field_update(field, values)
+        self.assertEqual(values, {})
+        self.assertFalse(field.changed)
+
+        # auto
+
+        field = relations.Field(int, name="id", auto=True)
+        self.source.field_init(field)
+        values = {}
+        field.value = 1
+        self.source.field_update(field, values)
         self.assertEqual(values, {})
 
     def test_model_update(self):

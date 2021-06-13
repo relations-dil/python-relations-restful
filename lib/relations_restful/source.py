@@ -63,21 +63,16 @@ class Source(relations.Source):
         if model.ENDPOINT is None:
             model.ENDPOINT = model.SINGULAR
 
-        if model._id is not None and model._fields._names[model._id].readonly is None:
-            model._fields._names[model._id].readonly = True
+        if model._id is not None and model._fields._names[model._id].auto is None:
+            model._fields._names[model._id].auto = True
 
     def field_create(self, field, values):
         """
         Updates values with the field's that changed
         """
 
-        if not field.readonly:
-            if field.attr is not None:
-                value = field.export()
-            else:
-                value = field.value
-            values[field.name] = value
-            field.changed = False
+        if not field.auto:
+            values[field.name] = field.export()
 
     def model_create(self, model):
         """
@@ -96,7 +91,7 @@ class Source(relations.Source):
 
         for index, creating in enumerate(models):
 
-            if model._id is not None and model._fields._names[model._id].readonly:
+            if model._id is not None and model._fields._names[model._id].auto:
                 creating[model._id] = records[index][model._fields._names[model._id].store]
 
             if not model._bulk:
@@ -204,18 +199,21 @@ class Source(relations.Source):
 
         return labels
 
-    def field_update(self, field, values, changed=None):
+    def field_update(self, field, values):
         """
         Updates values with the field's that changed
         """
 
-        if not field.readonly and (changed is None or field.changed == changed):
-            if field.attr is not None:
-                value = field.export()
-            else:
-                value = field.value
-            values[field.name] = value
-            field.changed = False
+        if not field.auto and field.delta():
+            values[field.name] = field.original = field.export()
+
+    def field_mass(self, field, values):
+        """
+        Mass values with the field's that changed
+        """
+
+        if not field.auto and field.changed:
+            values[field.name] = field.export()
 
     def model_update(self, model):
         """
@@ -232,7 +230,7 @@ class Source(relations.Source):
             self.record_retrieve(model._record, criteria)
 
             values = {}
-            self.record_update(model._record, values, changed=True)
+            self.record_mass(model._record, values)
 
             updated += self.result(model, "updated", self.session.patch(
                 f"{self.url}/{model.ENDPOINT}", json={"filter": criteria, model.PLURAL: values})
