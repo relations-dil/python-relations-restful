@@ -717,50 +717,6 @@ class TestResource(TestRestful):
             }
         })
 
-    def test_export(self):
-
-        meta = Meta(
-            "dive",
-            flag=True,
-            spend=3.50,
-            stuff=[1, 2, 3, None],
-            things={"for": [{"1": "yep"}]},
-            push="sure"
-        ).create()
-
-        self.assertEqual(relations_restful.Resource.export(Meta.one(meta.id)), {
-            "id": 1,
-            "name": "dive",
-            "flag": True,
-            "spend": 3.50,
-            "stuff": [1, 2, 3, {"relations.io": {"1": "sure"}}],
-            "things": {"for": [{"1": "yep"}]},
-            "pull": "yep",
-            "push": "sure"
-        })
-
-        net = Net(
-            "1.2.3.4",
-            subnet="1.2.3.0/24"
-        ).create()
-
-        self.assertEqual(relations_restful.Resource.export(Net.one(net.id)), {
-            "id": 1,
-            "ip_address": "1.2.3.4",
-            "ip_value": 16909060,
-            "ip": {
-                "address": "1.2.3.4",
-                "value": 16909060
-            },
-            "subnet": {
-                "address": "1.2.3.0/24",
-                "min_address": "1.2.3.0",
-                "min_value": 16909056,
-                "max_address": "1.2.3.255",
-                "max_value": 16909311
-            }
-        })
-
     def test_options(self):
 
         response = self.api.options("/simple")
