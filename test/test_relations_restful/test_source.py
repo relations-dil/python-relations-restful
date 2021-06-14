@@ -32,8 +32,7 @@ class Meta(SourceModel):
     flag = bool
     spend = float
     stuff = list
-    things = dict
-    pull = str, {"extract": "things__for__0___1"}
+    things = dict, {"extract": "for__0___1"}
     push = str, {"inject": "stuff__-1__relations.io___1"}
 
 def subnet_attr(values, value):
@@ -49,12 +48,11 @@ def subnet_attr(values, value):
 class Net(SourceModel):
 
     id = int
-    ip_address = str, {"extract": "ip__address"}
-    ip_value = int, {"extract": "ip__value"}
     ip = ipaddress.IPv4Address, {
         "attr": {"compressed": "address", "__int__": "value"},
         "init": "address",
-        "label": "address"
+        "label": "address",
+        "extract": {"address": str, "value": int}
     }
     subnet = ipaddress.IPv4Network, {
         "attr": subnet_attr,
@@ -62,7 +60,8 @@ class Net(SourceModel):
         "label": "address"
     }
 
-    INDEX = "ip_value"
+    LABEL = "ip__address"
+    INDEX = "ip__value"
 
 class Unit(SourceModel):
     id = int
@@ -113,8 +112,7 @@ class TestSource(unittest.TestCase):
             flag = bool
             spend = float
             stuff = list
-            things = dict
-            pull = str, {"extract": "things__for__0___1"}
+            things = dict, {"extract": "for__0___1"}
             push = str, {"inject": "stuff__-1__relations.io___1"}
 
         def subnet_attr(values, value):
@@ -130,12 +128,11 @@ class TestSource(unittest.TestCase):
         class Net(ResourceModel):
 
             id = int
-            ip_address = str, {"extract": "ip__address"}
-            ip_value = int, {"extract": "ip__value"}
             ip = ipaddress.IPv4Address, {
                 "attr": {"compressed": "address", "__int__": "value"},
                 "init": "address",
-                "label": "address"
+                "label": "address",
+                "extract": {"address": str, "value": int}
             }
             subnet = ipaddress.IPv4Network, {
                 "attr": subnet_attr,
@@ -143,7 +140,8 @@ class TestSource(unittest.TestCase):
                 "label": "address"
             }
 
-            INDEX = "ip_value"
+            LABEL = "ip__address"
+            INDEX = "ip__value"
 
         class MetaResource(relations_restful.Resource):
             MODEL = Meta
@@ -325,7 +323,7 @@ class TestSource(unittest.TestCase):
                     "spend": 3.50,
                     "stuff": [1, {"relations.io": {"1": "sure"}}],
                     "things": {"a": 1, "for": [{"1": "yep"}]},
-                    "pull": "yep"
+                    "things__for__0___1": "yep"
                 },
                 2: {
                     "id": 2,
@@ -334,7 +332,7 @@ class TestSource(unittest.TestCase):
                     "spend": None,
                     "stuff": [{"relations.io": {"1": None}}],
                     "things": {},
-                    "pull": None
+                    "things__for__0___1": None
                 }
             }
         })
@@ -394,7 +392,6 @@ class TestSource(unittest.TestCase):
 
         model = Meta.many(stuff__1=2)
         self.assertEqual(model[0].name, "dive")
-        self.assertEqual(model[0].pull, "yep")
 
         model = Meta.many(things__a__b__0=1)
         self.assertEqual(model[0].name, "dive")
@@ -424,19 +421,19 @@ class TestSource(unittest.TestCase):
         Net().create()
 
         model = Net.many(like='1.2.3.')
-        self.assertEqual(model[0].ip_address, "1.2.3.4")
+        self.assertEqual(model[0].ip.compressed, "1.2.3.4")
 
         model = Net.many(ip__address__like='1.2.3.')
-        self.assertEqual(model[0].ip_address, "1.2.3.4")
+        self.assertEqual(model[0].ip.compressed, "1.2.3.4")
 
         model = Net.many(ip__value__gt=int(ipaddress.IPv4Address('1.2.3.0')))
-        self.assertEqual(model[0].ip_address, "1.2.3.4")
+        self.assertEqual(model[0].ip.compressed, "1.2.3.4")
 
         model = Net.many(subnet__address__like='1.2.3.')
-        self.assertEqual(model[0].ip_address, "1.2.3.4")
+        self.assertEqual(model[0].ip.compressed, "1.2.3.4")
 
         model = Net.many(subnet__min_value=int(ipaddress.IPv4Address('1.2.3.0')))
-        self.assertEqual(model[0].ip_address, "1.2.3.4")
+        self.assertEqual(model[0].ip.compressed, "1.2.3.4")
 
         model = Net.many(ip__address__notlike='1.2.3.')
         self.assertEqual(len(model), 0)
@@ -562,19 +559,6 @@ class TestSource(unittest.TestCase):
 
         plain = Plain.one()
         self.assertRaisesRegex(relations.ModelError, "plain: nothing to update from", plain.update)
-
-        dive = Meta("dive", things={"for": [{"1": "yep"}]}).create()
-        swim = Meta("swim", things={"for": [{"1": "nope"}]}).create()
-
-        Meta.many().set(things={"for": [{"1": "um"}]}).update()
-
-        self.assertEqual(Meta.one(dive.id).pull, "um")
-        self.assertEqual(Meta.one(swim.id).pull, "um")
-
-        Meta.one(swim.id).set(things={"for": [{"1": "nah"}]}).update()
-
-        self.assertEqual(Meta.one(dive.id).pull, "um")
-        self.assertEqual(Meta.one(swim.id).pull, "nah")
 
         net = Net(ip="1.2.3.4", subnet="1.2.3.0/24").create()
 

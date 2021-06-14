@@ -35,8 +35,7 @@ class Meta(ResourceModel):
     flag = bool
     spend = float
     stuff = list
-    things = dict
-    pull = str, {"extract": "things__for__0___1"}
+    things = dict, {"extract": "for__0___1"}
     push = str, {"inject": "stuff__-1__relations.io___1"}
 
 def subnet_attr(values, value):
@@ -52,12 +51,11 @@ def subnet_attr(values, value):
 class Net(ResourceModel):
 
     id = int
-    ip_address = str, {"extract": "ip__address"}
-    ip_value = int, {"extract": "ip__value"}
     ip = ipaddress.IPv4Address, {
         "attr": {"compressed": "address", "__int__": "value"},
         "init": "address",
-        "label": "address"
+        "label": "address",
+        "extract": {"address": str, "value": int}
     }
     subnet = ipaddress.IPv4Network, {
         "attr": subnet_attr,
@@ -65,7 +63,8 @@ class Net(ResourceModel):
         "label": "address"
     }
 
-    INDEX = "ip_value"
+    LABEL = "ip__address"
+    INDEX = "ip__value"
 
 class SimpleResource(relations_restful.Resource):
     MODEL = Simple
@@ -181,7 +180,6 @@ class TestResourceIdentity(TestRestful):
             name = str
             status = str,"good"
             meta = dict
-            pull = str, {"extract": "meta__for__0___1"}
             push = str, {"inject": "meta__a__-1__relations.io___1"}
             ip = ipaddress.IPv4Address, {
                 "attr": {"compressed": "address", "__int__": "value"},
@@ -216,12 +214,6 @@ class TestResourceIdentity(TestRestful):
                 "name": "meta",
                 "kind": "dict",
                 "default": {}
-            },
-            {
-                "name": "pull",
-                "kind": "str",
-                "readonly": True,
-                "extract": "meta__for__0___1"
             },
             {
                 "name": "push",
@@ -272,12 +264,6 @@ class TestResourceIdentity(TestRestful):
                 "default": {}
             },
             {
-                "name": "pull",
-                "kind": "str",
-                "readonly": True,
-                "extract": "meta__for__0___1"
-            },
-            {
                 "name": "push",
                 "kind": "str",
                 "inject": "meta__a__-1__relations.io___1"
@@ -322,12 +308,6 @@ class TestResourceIdentity(TestRestful):
                 "name": "meta",
                 "kind": "dict",
                 "default": {}
-            },
-            {
-                "name": "pull",
-                "kind": "str",
-                "readonly": True,
-                "extract": "meta__for__0___1"
             },
             {
                 "name": "push",
@@ -817,20 +797,6 @@ class TestResource(TestRestful):
                 "kind": "int",
                 "readonly": True,
                 "original": 1
-            },
-            {
-                "name": "ip_address",
-                "kind": "str",
-                "readonly": True,
-                "original": "1.2.3.4",
-                "extract": "ip__address"
-            },
-            {
-                "name": "ip_value",
-                "kind": "int",
-                "readonly": True,
-                "original": 16909060,
-                "extract": "ip__value"
             },
             {
                 "name": "ip",
