@@ -124,7 +124,7 @@ class ResourceIdentity:
                 "kind": model_field.kind.__name__
             }
 
-            for attribute in ["options", "validation", "init", "extract", "inject"]:
+            for attribute in ["options", "validation", "init", "inject"]:
                 if getattr(model_field, attribute):
                     form_field[attribute] = getattr(model_field, attribute)
 
@@ -147,7 +147,7 @@ class ResourceIdentity:
         # Make sure all the list checks out
 
         for field in self.LIST:
-            if field not in self._model._fields:
+            if field.split("__")[0] not in self._model._fields:
                 raise ResourceError(self, f"cannot find field {field} from list")
 
         return self
