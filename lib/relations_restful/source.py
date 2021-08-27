@@ -116,7 +116,7 @@ class Source(relations.Source):
         """
 
         for operator, value in (field.criteria or {}).items():
-            criteria[f"{field.name}__{operator}"] = value
+            criteria[f"{field.name}__{operator}"] = sorted(value) if isinstance(value, set) else value
 
     def model_count(self, model):
         """
