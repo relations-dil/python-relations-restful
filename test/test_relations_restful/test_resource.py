@@ -34,6 +34,7 @@ class Meta(ResourceModel):
     name = str
     flag = bool
     spend = float
+    people = set
     stuff = list
     things = dict, {"extract": "for__0___1"}
     push = str, {"inject": "stuff__-1__relations.io___1"}
@@ -818,6 +819,48 @@ class TestResource(TestRestful):
                     "max_value": 16909311
                 },
                 "init": {"address": "address"}
+            }
+        ], errors=[])
+
+        response = self.api.options("/meta")
+        self.assertStatusFields(response, 200, [
+            {
+                "name": "id",
+                "kind": "int",
+                "readonly": True
+            },
+            {
+                "name": "name",
+                "kind": "str",
+                "required": True
+            },
+            {
+                "name": "flag",
+                "kind": "bool"
+            },
+            {
+                "name": "spend",
+                "kind": "float"
+            },
+            {
+                "name": "people",
+                "kind": "set",
+                "default": []
+            },
+            {
+                "name": "stuff",
+                "kind": "list",
+                "default": []
+            },
+            {
+                "name": "things",
+                "kind": "dict",
+                "default": {}
+            },
+            {
+                "name": "push",
+                "kind": "str",
+                "inject": "stuff__-1__relations.io___1"
             }
         ], errors=[])
 

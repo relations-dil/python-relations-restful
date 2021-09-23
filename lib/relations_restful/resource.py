@@ -133,6 +133,8 @@ class ResourceIdentity:
 
             if model_field.default is not None:
                 form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
+                if isinstance(form_field["default"], set):
+                    form_field["default"] = sorted(list(form_field["default"]))
             elif not model_field.auto and (not model_field.none or model_field.name in self._model._label):
                 form_field["required"] = True
 
