@@ -245,14 +245,14 @@ class TestSource(unittest.TestCase):
 
         self.assertRaisesRegex(relations.ModelError, "moded: whoops", source.result, model, "whatevs", response)
 
-    def test_model_init(self):
+    def test_init(self):
 
         class Check(relations.Model):
             id = int
             name = str
 
         model = Check()
-        self.source.model_init(model)
+        self.source.init(model)
 
         self.assertEqual(model.SINGULAR, "check")
         self.assertEqual(model.PLURAL, "checks")
@@ -264,13 +264,13 @@ class TestSource(unittest.TestCase):
         Check.ENDPOINT = "things"
 
         model = Check()
-        self.source.model_init(model)
+        self.source.init(model)
 
         self.assertEqual(model.SINGULAR, "people")
         self.assertEqual(model.PLURAL, "stuff")
         self.assertEqual(model.ENDPOINT, "things")
 
-    def test_model_create(self):
+    def test_create(self):
 
         simple = Simple("sure")
         simple.plain.add("fine")
@@ -341,7 +341,7 @@ class TestSource(unittest.TestCase):
             }
         })
 
-    def test_model_count(self):
+    def test_count(self):
 
         Unit([["stuff"], ["people"]]).create()
 
@@ -351,7 +351,7 @@ class TestSource(unittest.TestCase):
 
         self.assertEqual(Unit.many(like="p").count(), 1)
 
-    def test_model_retrieve(self):
+    def test_retrieve(self):
 
         Unit([["people"], ["stuff"]]).create()
 
@@ -497,7 +497,7 @@ class TestSource(unittest.TestCase):
         model = Net.many(subnet__max_value=int(ipaddress.IPv4Address('1.2.3.0')))
         self.assertEqual(len(model), 0)
 
-    def test_model_labels(self):
+    def test_labels(self):
 
         Unit("people").create().test.add("stuff").add("things").create()
 
@@ -535,7 +535,7 @@ class TestSource(unittest.TestCase):
             1: ["1.2.3.4"]
         })
 
-    def test_field_update(self):
+    def test_update_field(self):
 
         # Standard
 
@@ -543,13 +543,13 @@ class TestSource(unittest.TestCase):
         self.source.field_init(field)
         values = {}
         field.value = 1
-        self.source.field_update(field, values)
+        self.source.update_field(field, values)
         self.assertEqual(values, {"id": 1})
 
         # not changed
 
         values = {}
-        self.source.field_update(field, values)
+        self.source.update_field(field, values)
         self.assertEqual(values, {})
 
         # auto
@@ -558,7 +558,7 @@ class TestSource(unittest.TestCase):
         self.source.field_init(field)
         values = {}
         field.value = 1
-        self.source.field_update(field, values)
+        self.source.update_field(field, values)
         self.assertEqual(values, {})
 
     def test_field_mass(self):
@@ -569,14 +569,14 @@ class TestSource(unittest.TestCase):
         self.source.field_init(field)
         values = {}
         field.value = 1
-        self.source.field_update(field, values)
+        self.source.update_field(field, values)
         self.assertEqual(values, {"id": 1})
 
         # not changed
 
         field.changed = False
         values = {}
-        self.source.field_update(field, values)
+        self.source.update_field(field, values)
         self.assertEqual(values, {})
         self.assertFalse(field.changed)
 
@@ -586,10 +586,10 @@ class TestSource(unittest.TestCase):
         self.source.field_init(field)
         values = {}
         field.value = 1
-        self.source.field_update(field, values)
+        self.source.update_field(field, values)
         self.assertEqual(values, {})
 
-    def test_model_update(self):
+    def test_update(self):
 
         Unit([["people"], ["stuff"]]).create()
 
@@ -626,7 +626,7 @@ class TestSource(unittest.TestCase):
 
         self.assertEqual(meta.things__a__b__0, 3)
 
-    def test_model_delete(self):
+    def test_delete(self):
 
         unit = Unit("people")
         unit.test.add("stuff").add("things")
