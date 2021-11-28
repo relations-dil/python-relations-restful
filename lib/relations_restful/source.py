@@ -43,7 +43,7 @@ class Source(relations.Source):
 
         return body[key]
 
-    def model_init(self, model):
+    def init(self, model):
         """
         Init the model
         """
@@ -66,7 +66,7 @@ class Source(relations.Source):
         if model._id is not None and model._fields._names[model._id].auto is None:
             model._fields._names[model._id].auto = True
 
-    def field_create(self, field, values):
+    def create_field(self, field, values):
         """
         Updates values with the field's that changed
         """
@@ -74,7 +74,7 @@ class Source(relations.Source):
         if not field.auto:
             values[field.name] = field.export()
 
-    def model_create(self, model):
+    def create(self, model):
         """
         Executes the create
         """
@@ -84,7 +84,7 @@ class Source(relations.Source):
 
         for creating in models:
             record = {}
-            self.record_create(creating._record, record)
+            self.create_record(creating._record, record)
             values.append(record)
 
         records = self.result(model, model.PLURAL, self.session.post(f"{self.url}/{model.ENDPOINT}", json={model.PLURAL: values}))
@@ -110,7 +110,7 @@ class Source(relations.Source):
 
         return model
 
-    def field_retrieve(self, field, criteria):
+    def retrieve_field(self, field, criteria):
         """
         Adds critera to the filter
         """
@@ -118,7 +118,7 @@ class Source(relations.Source):
         for operator, value in (field.criteria or {}).items():
             criteria[f"{field.name}__{operator}"] = sorted(value) if isinstance(value, set) else value
 
-    def model_count(self, model):
+    def count(self, model):
         """
         Executes the retrieve
         """
@@ -126,7 +126,7 @@ class Source(relations.Source):
         model._collate()
 
         body = {"filter": {}}
-        self.record_retrieve(model._record, body["filter"])
+        self.retrieve_record(model._record, body["filter"])
 
         body["count"] = True
 
@@ -135,7 +135,7 @@ class Source(relations.Source):
 
         return self.result(model, model.PLURAL, self.session.get(f"{self.url}/{model.ENDPOINT}", json=body))
 
-    def model_retrieve(self, model, verify=True):
+    def retrieve(self, model, verify=True):
         """
         Executes the retrieve
         """
@@ -143,7 +143,7 @@ class Source(relations.Source):
         model._collate()
 
         body = {"filter": {}}
-        self.record_retrieve(model._record, body["filter"])
+        self.retrieve_record(model._record, body["filter"])
 
         if model._like:
             body["filter"]["like"] = model._like
@@ -184,13 +184,13 @@ class Source(relations.Source):
 
         return model
 
-    def model_labels(self, model):
+    def labels(self, model):
         """
         Creates the labels structure
         """
 
         if model._action == "retrieve":
-            self.model_retrieve(model)
+            self.retrieve(model)
 
         labels = relations.Labels(model)
 
@@ -199,7 +199,7 @@ class Source(relations.Source):
 
         return labels
 
-    def field_update(self, field, values):
+    def update_field(self, field, values):
         """
         Updates values with the field's that changed
         """
@@ -215,7 +215,7 @@ class Source(relations.Source):
         if not field.auto and field.changed:
             values[field.name] = field.export()
 
-    def model_update(self, model):
+    def update(self, model):
         """
         Executes the update
         """
@@ -227,7 +227,7 @@ class Source(relations.Source):
         if model._action == "retrieve" and model._record._action == "update":
 
             criteria = {}
-            self.record_retrieve(model._record, criteria)
+            self.retrieve_record(model._record, criteria)
 
             values = {}
             self.record_mass(model._record, values)
@@ -241,7 +241,7 @@ class Source(relations.Source):
             for updating in model._each("update"):
 
                 values = {}
-                self.record_update(updating._record, values)
+                self.update_record(updating._record, values)
 
                 updated += self.result(updating, "updated", self.session.patch(
                     f"{self.url}/{model.ENDPOINT}/{updating[model._id]}", json={model.SINGULAR: values})
@@ -257,7 +257,7 @@ class Source(relations.Source):
 
         return updated
 
-    def model_delete(self, model):
+    def delete(self, model):
         """
         Executes the delete
         """
@@ -266,7 +266,7 @@ class Source(relations.Source):
 
         if model._action == "retrieve":
 
-            self.record_retrieve(model._record, criteria)
+            self.retrieve_record(model._record, criteria)
 
         elif model._id:
 
