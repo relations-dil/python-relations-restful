@@ -184,20 +184,20 @@ class Source(relations.Source):
 
         return model
 
-    def labels(self, model):
+    def titles(self, model):
         """
-        Creates the labels structure
+        Creates the titles structure
         """
 
         if model._action == "retrieve":
             self.retrieve(model)
 
-        labels = relations.Labels(model)
+        titles = relations.Titles(model)
 
-        for labeling in model._each():
-            labels.add(labeling)
+        for titling in model._each():
+            titles.add(titling)
 
-        return labels
+        return titles
 
     def update_field(self, field, values):
         """

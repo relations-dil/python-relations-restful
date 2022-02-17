@@ -135,7 +135,7 @@ class ResourceIdentity:
                 form_field["default"] = model_field.default() if callable(model_field.default) else model_field.default
                 if isinstance(form_field["default"], set):
                     form_field["default"] = sorted(list(form_field["default"]))
-            elif not model_field.auto and (not model_field.none or model_field.name in self._model._label):
+            elif not model_field.auto and (not model_field.none or model_field.name in self._model._titles):
                 form_field["required"] = True
 
             if model_field.name in fields.names:
@@ -259,7 +259,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
     def fields(self, likes, values, originals=None):
         """
-        Apply options and labels to fields
+        Apply options and titles to fields
         """
 
         fields = opengui.Fields(values=values, originals=originals, fields=self._fields)
@@ -269,19 +269,19 @@ class Resource(flask_restful.Resource, ResourceIdentity):
             if relation is not None:
                 like = {"like": likes[name] for name in likes if name == field.name}
                 parent = relation.Parent.many(**like).limit()
-                labels = parent.labels()
+                titles = parent.titles()
 
-                field.content["format"] = labels.format
+                field.content["format"] = titles.format
                 field.content["overflow"] = parent.overflow
 
                 value = field.value if field.value is not None else field.original
 
-                if (not like and value is not None and value not in labels):
-                    labels = relation.Parent.one(**{relation.parent_field: value}).labels()
+                if (not like and value is not None and value not in titles):
+                    titles = relation.Parent.one(**{relation.parent_field: value}).titles()
                     field.content["overflow"] = True
 
-                field.options = labels.ids
-                field.content["labels"] = labels.labels
+                field.options = titles.ids
+                field.content["titles"] = titles.titles
 
                 field.content.update(like)
 
@@ -299,17 +299,17 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         for field in model._fields._order:
             relation = model._ancestor(field.name)
             if relation is not None:
-                labels = relation.Parent.many(**{f"{relation.parent_field}__in": model[field.name]}).labels()
+                titles = relation.Parent.many(**{f"{relation.parent_field}__in": model[field.name]}).titles()
                 formats[field.name] = {
-                    "labels": labels.labels,
-                    "format": labels.format
+                    "titles": titles.titles,
+                    "format": titles.format
                 }
-            elif field.format is not None or "labels" in fields[field.name].content:
+            elif field.format is not None or "titles" in fields[field.name].content:
                 formats[field.name] = {}
                 if field.format is not None:
                     formats[field.name]["format"] = field.format
-                if  "labels" in fields[field.name].content:
-                    formats[field.name]["labels"] = fields[field.name].content["labels"]
+                if  "titles" in fields[field.name].content:
+                    formats[field.name]["titles"] = fields[field.name].content["titles"]
 
         return formats
 
