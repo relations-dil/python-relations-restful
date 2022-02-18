@@ -13,7 +13,7 @@ setup(
     ],
     install_requires=[
         'requests==2.25.1',
-        'flask==1.1.2',
-        'flask_restful==0.3.8'
+        'flask==2.0.3',
+        'flask_restful==0.3.9'
     ]
 )
