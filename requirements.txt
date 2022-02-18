@@ -1,7 +1,7 @@
-git+https://github.com/gaf3/python-relations.git@0.6.6#egg=python-relations
+git+https://github.com/relations-dil/python-relations.git@0.6.7#egg=python-relations
 git+https://github.com/gaf3/opengui.git@0.8.3#egg=opengui
 requests==2.25.1
-flask==2.0.1
+flask==2.0.3
 flask_restful==0.3.9
 ptvsd==4.3.2
 coverage==5.2.1

@@ -55,16 +55,16 @@ class Net(ResourceModel):
     ip = ipaddress.IPv4Address, {
         "attr": {"compressed": "address", "__int__": "value"},
         "init": "address",
-        "label": "address",
+        "titles": "address",
         "extract": {"address": str, "value": int}
     }
     subnet = ipaddress.IPv4Network, {
         "attr": subnet_attr,
         "init": "address",
-        "label": "address"
+        "titles": "address"
     }
 
-    LABEL = "ip__address"
+    TITLES = "ip__address"
     INDEX = "ip__value"
 
 class SimpleResource(relations_restful.Resource):
@@ -185,7 +185,7 @@ class TestResourceIdentity(TestRestful):
             ip = ipaddress.IPv4Address, {
                 "attr": {"compressed": "address", "__int__": "value"},
                 "init": "address",
-                "label": "address"
+                "titles": "address"
             }
 
         class InitResource(relations_restful.ResourceIdentity):
@@ -230,7 +230,7 @@ class TestResourceIdentity(TestRestful):
         self.assertEqual(resource.LIST, ['id', 'name'])
 
         Init.SINGULAR = "inity"
-        Init.LABEL = ["name", "status"]
+        Init.TITLES = ["name", "status"]
         InitResource.FIELDS = [
             {
                 "name": "name",
@@ -526,7 +526,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [1],
-                "labels": {
+                "titles": {
                     1: ["ya"]
                 },
                 "like": "y",
@@ -553,7 +553,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [],
-                "labels": {},
+                "titles": {},
                 "like": "n",
                 "format": [None],
                 "overflow": False,
@@ -578,7 +578,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [2, 3],
-                "labels": {
+                "titles": {
                     2: ["sure"],
                     3: ["whatevs"]
                 },
@@ -604,7 +604,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [1],
-                "labels": {
+                "titles": {
                     1: ["ya"]
                 },
                 "format": [None],
@@ -629,7 +629,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [1],
-                "labels": {
+                "titles": {
                     1: ["ya"]
                 },
                 "format": [None],
@@ -654,14 +654,14 @@ class TestResource(TestRestful):
 
         self.assertEqual(PlainResource().formats(Plain.many()), {
             "simple_id": {
-                "labels": {1: ["ya"]},
+                "titles": {1: ["ya"]},
                 "format": [None]
             }
         })
 
         self.assertEqual(PlainResource().formats(Plain.many()), {
             "simple_id": {
-                "labels": {1: ["ya"]},
+                "titles": {1: ["ya"]},
                 "format": [None]
             }
         })
@@ -679,7 +679,7 @@ class TestResource(TestRestful):
             FIELDS = [
                 {
                     "name": "status",
-                    "labels": {
+                    "titles": {
                         "good": "Good",
                         "bad": "Bad"
                     }
@@ -688,7 +688,7 @@ class TestResource(TestRestful):
 
         self.assertEqual(AdvancedResource().formats(Advanced.many()), {
             "status": {
-                "labels": {
+                "titles": {
                     "good": "Good",
                     "bad": "Bad"
                 },
@@ -755,7 +755,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [1],
-                "labels": {
+                "titles": {
                     '1': ["ya"]
                 },
                 "like": "y",
@@ -776,7 +776,7 @@ class TestResource(TestRestful):
                 "name": "simple_id",
                 "kind": "int",
                 "options": [],
-                "labels": {},
+                "titles": {},
                 "like": "n",
                 "format": [None],
                 "overflow": False,
@@ -897,7 +897,7 @@ class TestResource(TestRestful):
         self.assertStatusModel(response, 200, "plains", [{"simple_id": simple.id, "name": "whatevs"}])
         self.assertStatusValue(response, 200, "formats", {
             "simple_id": {
-                "labels": {'1': ["ya"]},
+                "titles": {'1': ["ya"]},
                 "format": [None]
             }
         })

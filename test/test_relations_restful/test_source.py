@@ -52,16 +52,16 @@ class Net(SourceModel):
     ip = ipaddress.IPv4Address, {
         "attr": {"compressed": "address", "__int__": "value"},
         "init": "address",
-        "label": "address",
+        "titles": "address",
         "extract": {"address": str, "value": int}
     }
     subnet = ipaddress.IPv4Network, {
         "attr": subnet_attr,
         "init": "address",
-        "label": "address"
+        "titles": "address"
     }
 
-    LABEL = "ip__address"
+    TITLES = "ip__address"
     INDEX = "ip__value"
 
 class Unit(SourceModel):
@@ -133,16 +133,16 @@ class TestSource(unittest.TestCase):
             ip = ipaddress.IPv4Address, {
                 "attr": {"compressed": "address", "__int__": "value"},
                 "init": "address",
-                "label": "address",
+                "titles": "address",
                 "extract": {"address": str, "value": int}
             }
             subnet = ipaddress.IPv4Network, {
                 "attr": subnet_attr,
                 "init": "address",
-                "label": "address"
+                "titles": "address"
             }
 
-            LABEL = "ip__address"
+            TITLES = "ip__address"
             INDEX = "ip__value"
 
         class MetaResource(relations_restful.Resource):
@@ -497,41 +497,41 @@ class TestSource(unittest.TestCase):
         model = Net.many(subnet__max_value=int(ipaddress.IPv4Address('1.2.3.0')))
         self.assertEqual(len(model), 0)
 
-    def test_labels(self):
+    def test_titles(self):
 
         Unit("people").create().test.add("stuff").add("things").create()
 
-        labels = Unit.many().labels()
+        titles = Unit.many().titles()
 
-        self.assertEqual(labels.id, "id")
-        self.assertEqual(labels.label, ["name"])
-        self.assertEqual(labels.parents, {})
-        self.assertEqual(labels.format, ["fancy"])
+        self.assertEqual(titles.id, "id")
+        self.assertEqual(titles.fields, ["name"])
+        self.assertEqual(titles.parents, {})
+        self.assertEqual(titles.format, ["fancy"])
 
-        self.assertEqual(labels.ids, [1])
-        self.assertEqual(labels.labels,{1: ["people"]})
+        self.assertEqual(titles.ids, [1])
+        self.assertEqual(titles.titles,{1: ["people"]})
 
-        labels = Test.many().labels()
+        titles = Test.many().titles()
 
-        self.assertEqual(labels.id, "id")
-        self.assertEqual(labels.label, ["unit_id", "name"])
+        self.assertEqual(titles.id, "id")
+        self.assertEqual(titles.fields, ["unit_id", "name"])
 
-        self.assertEqual(labels.parents["unit_id"].id, "id")
-        self.assertEqual(labels.parents["unit_id"].label, ["name"])
-        self.assertEqual(labels.parents["unit_id"].parents, {})
-        self.assertEqual(labels.parents["unit_id"].format, ["fancy"])
+        self.assertEqual(titles.parents["unit_id"].id, "id")
+        self.assertEqual(titles.parents["unit_id"].fields, ["name"])
+        self.assertEqual(titles.parents["unit_id"].parents, {})
+        self.assertEqual(titles.parents["unit_id"].format, ["fancy"])
 
-        self.assertEqual(labels.format, ["fancy", "shmancy"])
+        self.assertEqual(titles.format, ["fancy", "shmancy"])
 
-        self.assertEqual(labels.ids, [1, 2])
-        self.assertEqual(labels.labels, {
+        self.assertEqual(titles.ids, [1, 2])
+        self.assertEqual(titles.titles, {
             1: ["people", "stuff"],
             2: ["people", "things"]
         })
 
         Net(ip="1.2.3.4", subnet="1.2.3.0/24").create()
 
-        self.assertEqual(Net.many().labels().labels, {
+        self.assertEqual(Net.many().titles().titles, {
             1: ["1.2.3.4"]
         })
 
