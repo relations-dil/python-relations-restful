@@ -32,7 +32,7 @@ lint:
 setup:
 	docker run $(TTY) $(VOLUMES) $(INSTALL) sh -c "cp -r /opt/service /opt/install && cd /opt/install/ && \
 	apk update && apk add git && pip install \
-	git+https://github.com/gaf3/python-relations.git@3f8ce8b#egg=relations \
+	git+https://github.com/gaf3/python-relations.git@0.6.8#egg=relations \
 	git+https://github.com/gaf3/opengui.git@0.8.3#egg=opengui && \
 	python setup.py install && \
 	python -m relations_restful.resource && \
