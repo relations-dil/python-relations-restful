@@ -180,12 +180,23 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         self.thy(self)
 
     @staticmethod
-    def criteria(verify=False):
+    def json():
+        """
+        Gets the current request JSON
+        """
+
+        if flask.request.is_json:
+            return flask.request.json
+
+        return {}
+
+    @classmethod
+    def criteria(cls, verify=False):
         """
         Gets criteria from the flask request
         """
 
-        if verify and not flask.request.args and "filter" not in (flask.request.json or {}):
+        if verify and not flask.request.args and "filter" not in cls.json():
             raise werkzeug.exceptions.BadRequest("to confirm all, send a blank filter {}")
 
         criteria = {}
@@ -197,13 +208,13 @@ class Resource(flask_restful.Resource, ResourceIdentity):
                 if not name.startswith("limit") and name not in ["sort", "count"]
             })
 
-        if flask.request.json is not None and "filter" in flask.request.json:
+        if "filter" in cls.json():
             criteria.update(flask.request.json["filter"])
 
         return criteria
 
-    @staticmethod
-    def sort():
+    @classmethod
+    def sort(cls):
         """
         Gets soirt from the flask request
         """
@@ -213,13 +224,13 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         if flask.request.args and 'sort' in flask.request.args:
             sort.extend(flask.request.args['sort'].split(','))
 
-        if flask.request.json is not None and "sort" in flask.request.json:
+        if "sort" in cls.json():
             sort.extend(flask.request.json['sort'])
 
         return sort
 
-    @staticmethod
-    def limit():
+    @classmethod
+    def limit(cls):
         """
         Gets limit from the flask request
         """
@@ -233,13 +244,13 @@ class Resource(flask_restful.Resource, ResourceIdentity):
                 if name.startswith("limit")
             })
 
-        if flask.request.json is not None and "limit" in flask.request.json:
+        if "limit" in cls.json():
             limit.update({name: int(value) for name, value in flask.request.json["limit"].items()})
 
         return limit
 
-    @staticmethod
-    def count():
+    @classmethod
+    def count(cls):
         """
         Gets soirt from the flask request
         """
@@ -249,7 +260,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         if flask.request.args and 'count' in flask.request.args:
             count = flask.request.args['count']
 
-        if flask.request.json is not None and "count" in flask.request.json:
+        if "count" in cls.json():
             count = flask.request.json['count']
 
         if isinstance(count, (bool, int)):
@@ -319,8 +330,8 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         Generates form for inserts or updates of a single record
         """
 
-        values = (flask.request.json or {}).get(self.SINGULAR)
-        likes = (flask.request.json or {}).get("likes", {})
+        values = self.json().get(self.SINGULAR)
+        likes = self.json().get("likes", {})
 
         if id is None:
 
@@ -336,15 +347,15 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         Creates one or more models
         """
 
-        if "filter" in (flask.request.json or {}):
+        if "filter" in self.json():
 
             return self.get()
 
-        if self.SINGULAR in (flask.request.json or {}):
+        if self.SINGULAR in self.json():
 
             return {self.SINGULAR: self.MODEL(**flask.request.json[self.SINGULAR]).create().export()}, 201
 
-        if self.PLURAL in (flask.request.json or {}):
+        if self.PLURAL in self.json():
 
             return {self.PLURAL: self.MODEL(flask.request.json[self.PLURAL]).create().export()}, 201
 
@@ -373,7 +384,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         Updates models
         """
 
-        if self.SINGULAR not in (flask.request.json or {}) and self.PLURAL not in (flask.request.json or {}):
+        if self.SINGULAR not in self.json() and self.PLURAL not in self.json():
             raise werkzeug.exceptions.BadRequest(f"either {self.SINGULAR} or {self.PLURAL} required")
 
         if id is not None:
