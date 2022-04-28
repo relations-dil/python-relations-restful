@@ -386,6 +386,20 @@ class TestResource(TestRestful):
             }
         ])
 
+    def test_json(self):
+
+        @relations_restful.exceptions
+        def json():
+            return {"json": relations_restful.Resource.json()}
+
+        self.app.add_url_rule('/json', 'json', json)
+
+        response = self.api.get("/json")
+        self.assertStatusValue(response, 200, "json", {})
+
+        response = self.api.get("/json", json={"a": 1})
+        self.assertStatusValue(response, 200, "json", {"a": 1})
+
     def test_criteria(self):
 
         verify = True
