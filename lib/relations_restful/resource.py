@@ -185,10 +185,10 @@ class Resource(flask_restful.Resource, ResourceIdentity):
         Gets the current request JSON
         """
 
-        if flask.request.is_json:
+        try:
             return flask.request.json
-
-        return {}
+        except:
+            return {}
 
     @classmethod
     def criteria(cls, verify=False):

@@ -397,6 +397,9 @@ class TestResource(TestRestful):
         response = self.api.get("/json")
         self.assertStatusValue(response, 200, "json", {})
 
+        response = self.api.get("/json", headers={"Content-Type": "application/json"})
+        self.assertStatusValue(response, 200, "json", {})
+
         response = self.api.get("/json", json={"a": 1})
         self.assertStatusValue(response, 200, "json", {"a": 1})
 
