@@ -187,7 +187,7 @@ class Resource(flask_restful.Resource, ResourceIdentity):
 
         try:
             return flask.request.json
-        except:
+        except: # pylint: disable=bare-except
             return {}
 
     @classmethod
