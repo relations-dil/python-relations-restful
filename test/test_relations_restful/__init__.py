@@ -1,7 +1,6 @@
 import unittest
 import unittest.mock
 import relations.unittest
-import relations_restful.unittest
 
 import sys
 import flask
@@ -32,7 +31,7 @@ class JellyResource(relations_restful.Resource):
 class TimeResource(relations_restful.Resource):
     MODEL = Time
 
-class TestRestful(relations_restful.unittest.TestCase):
+class TestRestful(relations.unittest.TestCase):
 
     maxDiff = None
 

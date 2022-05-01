@@ -3,13 +3,11 @@
 from setuptools import setup, find_packages
 setup(
     name="python-relations-restful",
-    version="0.6.6",
+    version="0.6.7",
     package_dir = {'': 'lib'},
     py_modules = [
         'relations_restful',
-        'relations_restful.resource',
-        'relations_restful.source',
-        'relations_restful.unittest'
+        'relations_restful.resource'
     ],
     install_requires=[
         'requests==2.25.1',

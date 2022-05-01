@@ -1,7 +1,7 @@
 ACCOUNT=gaf3
 IMAGE=relations-restful
 INSTALL=python:3.8.5-alpine3.12
-VERSION?=0.6.6
+VERSION?=0.6.7
 DEBUG_PORT=5678
 TTY=$(shell if tty -s; then echo "-it"; fi)
 VOLUMES=-v ${PWD}/lib:/opt/service/lib \
@@ -33,12 +33,10 @@ setup:
 	docker run $(TTY) $(VOLUMES) $(INSTALL) sh -c "cp -r /opt/service /opt/install && cd /opt/install/ && \
 	apk update && apk add git && \
 	pip install \
-		git+https://github.com/relations-dil/python-relations.git@0.6.9#egg=python-relations \
-		git+https://github.com/gaf3/opengui.git@0.8.3#egg=opengui && \
+		git+https://github.com/gaf3/opengui.git@0.8.3#egg=opengui \
+		git+https://github.com/relations-dil/python-relations.git@0.6.10#egg=python-relations && \
 	python setup.py install && \
-	python -m relations_restful.resource && \
-	python -m relations_restful.source && \
-	python -m relations_restful.unittest"
+	python -m relations_restful.resource"
 
 tag:
 	-git tag -a $(VERSION) -m "Version $(VERSION)"
