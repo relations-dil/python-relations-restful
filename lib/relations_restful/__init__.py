@@ -7,7 +7,6 @@ import inspect
 import flask_restful
 
 from relations_restful.resource import ResourceError, ResourceIdentity, Resource, exceptions
-from relations_restful.source import Source
 
 def resources(module):
     """
